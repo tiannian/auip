@@ -83,11 +83,13 @@ impl<T: AsRef<[u8]>> Packet<T> {
         }
     }
 
+    /// get buffer length for special payload length.
     pub fn buffer_len(payload_len: usize) -> usize {
         field::PAYLOAD.start + payload_len
     }
 
-    pub fn ethertype(&self) -> EthernetType {
+    /// get ethernet type.
+    pub fn ethernet_type(&self) -> EthernetType {
         let data = self.buffer.as_ref();
         let raw = NetworkEndian::read_u16(&data[field::ETHERTYPE]);
         EthernetType::from(raw)
@@ -95,7 +97,8 @@ impl<T: AsRef<[u8]>> Packet<T> {
 }
 
 impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
-    pub fn set_ethertype(&mut self, value: EthernetType) {
+    /// set ethernet type.
+    pub fn set_ethernet_type(&mut self, value: EthernetType) {
         let data = self.buffer.as_mut();
         NetworkEndian::write_u16(&mut data[field::ETHERTYPE], value.into())
     }

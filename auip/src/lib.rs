@@ -1,8 +1,8 @@
 #![no_std]
 
 // pub mod phy;
-pub mod ip;
-pub mod mac;
+// pub mod ip;
+// pub mod mac;
 // pub mod transport;
 
 /// Mac EthernetII

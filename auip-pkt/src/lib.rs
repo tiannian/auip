@@ -1,7 +1,8 @@
 #![no_std]
 
-pub mod mac;
 pub mod ip;
+pub mod mac;
+pub mod utils;
 
 /// Field
 pub type Field = core::ops::Range<usize>;
@@ -59,6 +60,8 @@ pub trait PayloadMut {
 /// Error's for packet.
 pub enum Error {
     Truncated,
+    Illegal,
+    Malformed,
 }
 
 /// Result for packet.
