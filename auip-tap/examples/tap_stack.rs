@@ -14,8 +14,17 @@ async fn main() {
         .arg("tap0")
         .spawn()
         .unwrap();
-    let status = command.wait().await.unwrap();
-    println!("Set ip {}", status);
-    let mut buffer = [0u8; 128];
-    file.read(&mut buffer).await.unwrap();
+    let _ = command.wait().await.unwrap();
+    let mut command = Command::new("ip")
+        .arg("link")
+        .arg("set")
+        .arg("tap0")
+        .arg("up")
+        .spawn()
+        .unwrap();
+    let _ = command.wait().await.unwrap();
+    let mut buffer = [0u8; 1500];
+    let size = file.read(&mut buffer).await.unwrap();
+    let (data, _) = buffer.split_at(size);
+    println!("recv {} bytes: {}", size, hex::encode(data));
 }
