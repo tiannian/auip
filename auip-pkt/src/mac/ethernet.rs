@@ -1,43 +1,10 @@
 //! EthernetII packet.
 
-use super::Address;
-use crate::prelude::*;
+use super::{Address, Protocol};
 use crate::error::*;
+use crate::prelude::*;
 use byteorder::{ByteOrder, NetworkEndian};
-
-/// Ethernet payload type.
-#[derive(Debug, Clone)]
-pub enum EthernetType {
-    IPv4,
-    IPv6,
-    ARP,
-    IEEE8021Q,
-    Unknown(u16),
-}
-
-impl From<u16> for EthernetType {
-    fn from(value: u16) -> Self {
-        match value {
-            0x0800 => EthernetType::IPv4,
-            0x86DD => EthernetType::IPv6,
-            0x0806 => EthernetType::ARP,
-            0x8100 => EthernetType::IEEE8021Q,
-            _ => EthernetType::Unknown(value),
-        }
-    }
-}
-
-impl From<EthernetType> for u16 {
-    fn from(value: EthernetType) -> Self {
-        match value {
-            EthernetType::IPv4 => 0x0800,
-            EthernetType::IPv6 => 0x86DD,
-            EthernetType::ARP => 0x0806,
-            EthernetType::IEEE8021Q => 0x8100,
-            EthernetType::Unknown(v) => v,
-        }
-    }
-}
+use core::fmt::{self, Display};
 
 /// Ethernet packet.
 #[derive(Debug, Clone)]
@@ -52,6 +19,15 @@ mod field {
     pub const SOURCE: Field = 6..12;
     pub const ETHERTYPE: Field = 12..14;
     pub const PAYLOAD: Rest = 14..;
+}
+
+impl<T: AsRef<[u8]>> Display for Packet<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_fmt(format_args!(
+            "Ethernet Packet:\n\tDestination: {}\n\tSource: {}\n\tEthernetType: {:?}\n\tPayload: {:?}",
+            self.dest_addr().unwrap(), self.src_addr().unwrap(), self.ethernet_type(), self.payload()
+        ))
+    }
 }
 
 impl<T: AsRef<[u8]>> AsRef<[u8]> for Packet<T> {
@@ -88,16 +64,16 @@ impl<T: AsRef<[u8]>> Packet<T> {
     }
 
     /// get ethernet type.
-    pub fn ethernet_type(&self) -> EthernetType {
+    pub fn ethernet_type(&self) -> Protocol {
         let data = self.buffer.as_ref();
         let raw = NetworkEndian::read_u16(&data[field::ETHERTYPE]);
-        EthernetType::from(raw)
+        Protocol::from(raw)
     }
 }
 
 impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
     /// set ethernet type.
-    pub fn set_ethernet_type(&mut self, value: EthernetType) {
+    pub fn set_ethernet_type(&mut self, value: Protocol) {
         let data = self.buffer.as_mut();
         NetworkEndian::write_u16(&mut data[field::ETHERTYPE], value.into())
     }
@@ -164,3 +140,5 @@ impl<T: AsRef<[u8]> + AsMut<[u8]>> PayloadMut for Packet<T> {
         Ok(&mut data[field::PAYLOAD])
     }
 }
+
+

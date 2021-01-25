@@ -1,8 +1,8 @@
 use super::{Hardware, Operation};
-use crate::mac::ethernet::EthernetType;
-use crate::{ip::ipv4, mac};
-use crate::prelude::*;
 use crate::error::*;
+use crate::mac::Protocol;
+use crate::prelude::*;
+use crate::{ip::ipv4, mac};
 use byteorder::{ByteOrder, NetworkEndian};
 
 #[derive(Debug, PartialEq, Clone)]
@@ -87,10 +87,10 @@ impl<T: AsRef<[u8]>> Packet<T> {
 
     /// Return the protocol type field.
     #[inline]
-    pub fn protocol_type(&self) -> EthernetType {
+    pub fn protocol_type(&self) -> Protocol {
         let data = self.buffer.as_ref();
         let raw = NetworkEndian::read_u16(&data[field::PTYPE]);
-        EthernetType::from(raw)
+        Protocol::from(raw)
     }
 
     /// Return the hardware length field.
@@ -150,7 +150,7 @@ impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
 
     /// Set the protocol type field.
     #[inline]
-    pub fn set_protocol_type(&mut self, value: EthernetType) {
+    pub fn set_protocol_type(&mut self, value: Protocol) {
         let data = self.buffer.as_mut();
         NetworkEndian::write_u16(&mut data[field::PTYPE], value.into())
     }
@@ -246,7 +246,7 @@ impl<T: AsRef<[u8]> + AsMut<[u8]>> DestAddrMut for Packet<T> {
         let (ipv4_addr, mac_addr) = addr;
         self.set_hardware_type(Hardware::Ethernet);
         self.set_target_hardware_addr(mac_addr.as_ref());
-        self.set_protocol_type(EthernetType::IPv4);
+        self.set_protocol_type(Protocol::IPv4);
         self.set_target_protocol_addr(ipv4_addr.as_ref());
         Ok(())
     }
@@ -273,7 +273,7 @@ impl<T: AsRef<[u8]> + AsMut<[u8]>> SrcAddrMut for Packet<T> {
         let (ipv4_addr, mac_addr) = addr;
         self.set_hardware_type(Hardware::Ethernet);
         self.set_source_hardware_addr(mac_addr.as_ref());
-        self.set_protocol_type(EthernetType::IPv4);
+        self.set_protocol_type(Protocol::IPv4);
         self.set_source_protocol_addr(ipv4_addr.as_ref());
         Ok(())
     }

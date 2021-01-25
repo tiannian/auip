@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    'auip',
+    'auip-pkt',
+    'auip-tap',
+]

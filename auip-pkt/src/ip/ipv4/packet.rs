@@ -1,8 +1,8 @@
 use super::Address;
-use crate::ip;
-use crate::utils::checksum;
-use crate::prelude::*;
 use crate::error::*;
+use crate::ip;
+use crate::prelude::*;
+use crate::utils::checksum;
 use byteorder::{ByteOrder, NetworkEndian};
 
 #[derive(Debug, PartialEq, Clone)]

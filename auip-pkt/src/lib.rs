@@ -1,8 +1,8 @@
+// #![feature(generic_associated_types)]
 #![no_std]
 
+pub mod error;
 pub mod ip;
 pub mod mac;
-pub mod utils;
 pub mod prelude;
-pub mod error;
-
+pub mod utils;

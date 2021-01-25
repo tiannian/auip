@@ -1,4 +1,5 @@
 /// Error's for packet.
+#[derive(Clone, Debug)]
 pub enum Error {
     Truncated,
     Illegal,
