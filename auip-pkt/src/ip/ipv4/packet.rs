@@ -1,9 +1,8 @@
 use super::Address;
 use crate::ip;
 use crate::utils::checksum;
-use crate::{
-    DestAddr, DestAddrMut, Error, IntoInner, Payload, PayloadMut, Result, SrcAddr, SrcAddrMut,
-};
+use crate::prelude::*;
+use crate::error::*;
 use byteorder::{ByteOrder, NetworkEndian};
 
 #[derive(Debug, PartialEq, Clone)]
@@ -12,7 +11,7 @@ pub struct Packet<T: AsRef<[u8]>> {
 }
 
 mod field {
-    use crate::Field;
+    use crate::utils::field::Field;
 
     pub const VER_IHL: usize = 0;
     pub const DSCP_ECN: usize = 1;
@@ -38,56 +37,57 @@ impl<T: AsRef<[u8]>> IntoInner for Packet<T> {
 impl<T: AsRef<[u8]>> DestAddr for Packet<T> {
     type Address = Address;
 
-    fn dest_addr(&self) -> Self::Address {
+    fn dest_addr(&self) -> Result<Self::Address> {
         let data = self.buffer.as_ref();
-        (&data[field::DST_ADDR]).into()
+        Ok((&data[field::DST_ADDR]).into())
     }
 }
 
 impl<T: AsRef<[u8]> + AsMut<[u8]>> DestAddrMut for Packet<T> {
     type Address = Address;
 
-    fn set_dest_addr(&mut self, addr: &Self::Address) {
+    fn set_dest_addr(&mut self, addr: &Self::Address) -> Result<()> {
         let data = self.buffer.as_mut();
-        data[field::DST_ADDR].copy_from_slice(addr.as_bytes())
+        data[field::DST_ADDR].copy_from_slice(addr.as_bytes());
+        Ok(())
     }
 }
 
 impl<T: AsRef<[u8]>> SrcAddr for Packet<T> {
     type Address = Address;
 
-    fn src_addr(&self) -> Self::Address {
+    fn src_addr(&self) -> Result<Self::Address> {
         let data = self.buffer.as_ref();
-        (&data[field::SRC_ADDR]).into()
+        Ok((&data[field::SRC_ADDR]).into())
     }
 }
 
 impl<T: AsRef<[u8]> + AsMut<[u8]>> SrcAddrMut for Packet<T> {
     type Address = Address;
 
-    fn set_src_addr(&mut self, addr: &Self::Address) {
+    fn set_src_addr(&mut self, addr: &Self::Address) -> Result<()> {
         let data = self.buffer.as_mut();
-        data[field::SRC_ADDR].copy_from_slice(addr.as_bytes())
+        Ok(data[field::SRC_ADDR].copy_from_slice(addr.as_bytes()))
     }
 }
 
 impl<T: AsRef<[u8]>> Payload for Packet<T> {
     type Payload = [u8];
 
-    fn payload(&self) -> &Self::Payload {
+    fn payload(&self) -> Result<&Self::Payload> {
         let inner = self.buffer.as_ref();
         let payload_field = (self.header_len() as usize)..;
-        &inner[payload_field]
+        Ok(&inner[payload_field])
     }
 }
 
 impl<T: AsRef<[u8]> + AsMut<[u8]>> PayloadMut for Packet<T> {
     type Payload = [u8];
 
-    fn payload_mut(&mut self) -> &mut Self::Payload {
+    fn payload_mut(&mut self) -> Result<&mut Self::Payload> {
         let payload_field = (self.header_len() as usize)..;
         let data = self.buffer.as_mut();
-        &mut data[payload_field]
+        Ok(&mut data[payload_field])
     }
 }
 

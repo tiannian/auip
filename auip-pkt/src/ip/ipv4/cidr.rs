@@ -1,5 +1,5 @@
 use super::Address;
-use crate::{Error, Result};
+use crate::error::*;
 use byteorder::{ByteOrder, NetworkEndian};
 
 /// A specification of an IPv4 CIDR block, containing an address and a variable-length
