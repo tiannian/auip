@@ -12,3 +12,6 @@ pub use protocol::Protocol;
 
 mod cidr;
 pub use cidr::Cidr;
+
+mod packet;
+pub use packet::Packet;

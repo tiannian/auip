@@ -4,10 +4,22 @@ use crate::mac::Protocol;
 use crate::prelude::*;
 use crate::{ip::ipv4, mac};
 use byteorder::{ByteOrder, NetworkEndian};
+use core::fmt::{Display, self};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Packet<T: AsRef<[u8]>> {
     buffer: T,
+}
+
+impl<T: AsRef<[u8]>> Display for Packet<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let dest_addr = self.dest_addr().unwrap();
+        let src_addr = self.src_addr().unwrap();
+        f.write_fmt(format_args!(
+            "Arp Packet:\n\tDestination: {}, {}\n\tSource: {}, {}",
+            dest_addr.0, dest_addr.1, src_addr.0, src_addr.1
+        ))
+    }
 }
 
 mod field {
@@ -31,7 +43,7 @@ mod field {
 
     pub fn target_hardware_address(hardware_len: u8, protocol_len: u8) -> Field {
         let start = source_protocol_address(hardware_len, protocol_len).end;
-        start..(start + protocol_len as usize)
+        start..(start + hardware_len as usize)
     }
 
     pub fn target_protocol_address(hardware_len: u8, protocol_len: u8) -> Field {
@@ -230,8 +242,9 @@ impl<T: AsRef<[u8]>> DestAddr for Packet<T> {
 
     fn dest_addr(&self) -> Result<Self::Address> {
         if self.hardware_len() == 6 && self.protocol_len() == 4 {
-            let ip_addr = self.target_hardware_addr().into();
-            let mac_addr = self.target_protocol_addr().into();
+            let ip_addr = self.target_protocol_addr().into();
+            let mac_addr = self.target_hardware_addr().into();
+            // println!(mac_addr);
             Ok((ip_addr, mac_addr))
         } else {
             Err(Error::Illegal)
@@ -257,8 +270,8 @@ impl<T: AsRef<[u8]>> SrcAddr for Packet<T> {
 
     fn src_addr(&self) -> Result<Self::Address> {
         if self.hardware_len() == 6 && self.protocol_len() == 4 {
-            let ip_addr = self.source_hardware_addr().into();
-            let mac_addr = self.source_protocol_addr().into();
+            let ip_addr = self.source_protocol_addr().into();
+            let mac_addr = self.source_hardware_addr().into();
             Ok((ip_addr, mac_addr))
         } else {
             Err(Error::Illegal)

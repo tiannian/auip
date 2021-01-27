@@ -8,7 +8,6 @@ mod tap;
 pub use tap::open_tap_device;
 
 use auip::phy::DeviceCapabilities;
-use auip_pkt::mac::ethernet::Packet;
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
 
@@ -27,26 +26,25 @@ impl TapDevice {
     }
 }
 
-// impl auip::phy::Device for TapDevice {
-//     type ReturnReceiveFuture<'__async_trait> =
-//         impl core::future::Future<Output = &'__async_trait mut [u8]>;
-//     fn receive<'__async_trait>(
-//         &'__async_trait mut self,
-//     ) -> Self::ReturnReceiveFuture<'__async_trait> {
-//         async move {
-//             let size = self.fs.read(&mut self.rx_buffer).await.unwrap();
-//             println!("Receive packet length: {}", size);
-//             let pkt = Packet::new_checked(&self.rx_buffer[..size]).unwrap();
-//             println!("{}", pkt);
-//             self.rx_buffer.as_mut()
-//         }
-//     }
+impl auip::phy::Driver for TapDevice {
+    type ReturnReceiveFuture<'__async_trait> =
+        impl core::future::Future<Output = &'__async_trait mut[u8]>;
 
-//     fn capabilities(&self) -> DeviceCapabilities {
-//         DeviceCapabilities {
-//             max_transmission_unit: 1536,
-//             max_burst_size: Some(1536),
-//             layer: auip::phy::DeviceLayer::Mac,
-//         }
-//     }
-// }
+    fn receive<'__async_trait>(
+        &'__async_trait mut self,
+    ) -> Self::ReturnReceiveFuture<'__async_trait> {
+        async move {
+            let size = self.fs.read(&mut self.rx_buffer).await.unwrap();
+            println!("Receive mac packet length: {}", size);
+            self.rx_buffer[..size].as_mut()
+        }
+    }
+
+    fn capabilities(&self) -> DeviceCapabilities {
+        DeviceCapabilities {
+            max_transmission_unit: 1536,
+            max_burst_size: Some(1536),
+            layer: auip::phy::DeviceLayer::Layer2,
+        }
+    }
+}

@@ -1,10 +1,10 @@
-use core::fmt::{self, Debug};
+use core::fmt::{self, Display};
 use core::format_args;
 
-#[derive(Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Default)]
+#[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Default)]
 pub struct Address(pub [u8; 4]);
 
-impl Debug for Address {
+impl Display for Address {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let inner = self.0;
         f.write_fmt(format_args!(
