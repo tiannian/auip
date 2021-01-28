@@ -1,8 +1,8 @@
 //! phy layer.
 
+use auip_pkt::mac;
 use core::future::Future;
-use auip_pkt::mac::Repr;
-use auip_pkt::ip;
+// use auip_pkt::ip;
 
 /// Device work layer.
 pub enum DeviceLayer {
@@ -17,8 +17,6 @@ pub struct DeviceCapabilities {
     pub layer: DeviceLayer,
 }
 
-pub type DriverReceivePacket<'a> = (Option<Repr>, ip::Packet<&'a mut [u8]>);
-
 /// Device trait.
 ///
 /// Device receive packet from device, then send mac repr to stack.
@@ -26,9 +24,7 @@ pub type DriverReceivePacket<'a> = (Option<Repr>, ip::Packet<&'a mut [u8]>);
 pub trait Driver {
     fn capabilities(&self) -> DeviceCapabilities;
 
-    type ReturnReceiveFuture<'__async_trait>: Future<Output = &'__async_trait mut [u8]>;
+    type ReturnReceiveFuture<'__async_trait>: Future<Output = Option<mac::Packet<&'__async_trait [u8]>>>;
 
-    fn receive<'__async_trait>(
-        &'__async_trait mut self,
-    ) -> Self::ReturnReceiveFuture<'__async_trait>;
+    fn receive(&mut self) -> Self::ReturnReceiveFuture<'_>;
 }

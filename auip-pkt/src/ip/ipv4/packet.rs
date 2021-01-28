@@ -1,7 +1,6 @@
 use super::Address;
 use crate::error::*;
 use crate::ip;
-use crate::prelude::*;
 use crate::utils::checksum;
 use byteorder::{ByteOrder, NetworkEndian};
 
@@ -71,15 +70,15 @@ impl<T: AsRef<[u8]> + AsMut<[u8]>> SrcAddrMut for Packet<T> {
     }
 }
 
-impl<T: AsRef<[u8]>> Payload for Packet<T> {
-    type Payload = [u8];
+// impl<T: AsRef<[u8]>> Payload for Packet<T> {
+//     type Payload = [u8];
 
-    fn payload(&self) -> Result<&Self::Payload> {
-        let inner = self.buffer.as_ref();
-        let payload_field = (self.header_len() as usize)..;
-        Ok(&inner[payload_field])
-    }
-}
+//     fn payload(&self) -> Result<&Self::Payload> {
+//         let inner = self.buffer.as_ref();
+//         let payload_field = (self.header_len() as usize)..;
+//         Ok(&inner[payload_field])
+//     }
+// }
 
 impl<T: AsRef<[u8]> + AsMut<[u8]>> PayloadMut for Packet<T> {
     type Payload = [u8];

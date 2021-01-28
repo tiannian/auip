@@ -9,4 +9,5 @@ edition = "2018"
 [dependencies]
 byteorder = {version = "1", default-features = false}
 managed = {version = "0.8", default-features = false, features = ["map"]}
+log = "0.4"
 auip-pkt = {path = "../auip-pkt"}

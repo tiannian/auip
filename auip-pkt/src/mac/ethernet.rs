@@ -2,7 +2,6 @@
 
 use super::{Address, Protocol};
 use crate::error::*;
-use crate::prelude::*;
 use byteorder::{ByteOrder, NetworkEndian};
 use core::fmt::{self, Display};
 
@@ -24,8 +23,11 @@ mod field {
 impl<T: AsRef<[u8]>> Display for Packet<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_fmt(format_args!(
-            "Ethernet Packet:\n\tDestination: {}\n\tSource: {}\n\tEthernetType: {:?}\n\tPayload: {:?}",
-            self.dest_addr().unwrap(), self.src_addr().unwrap(), self.ethernet_type(), self.payload()
+            "\tDestination: {}\n\tSource: {}\n\tProtocol: {:?}\n\tPayload: {:?}",
+            self.dest_addr(),
+            self.src_addr(),
+            self.protocol(),
+            &self.as_ref()[field::PAYLOAD]
         ))
     }
 }
@@ -64,81 +66,53 @@ impl<T: AsRef<[u8]>> Packet<T> {
     }
 
     /// get ethernet type.
-    pub fn ethernet_type(&self) -> Protocol {
+    pub fn protocol(&self) -> Protocol {
         let data = self.buffer.as_ref();
         let raw = NetworkEndian::read_u16(&data[field::ETHERTYPE]);
         Protocol::from(raw)
+    }
+
+    pub fn into_inner(self) -> T {
+        self.buffer
+    }
+
+    pub fn dest_addr(&self) -> Address {
+        let inner = self.buffer.as_ref();
+        (&inner[field::DESTINATION]).into()
+    }
+
+    pub fn src_addr(&self) -> Address {
+        let inner = self.buffer.as_ref();
+        (&inner[field::SOURCE]).into()
+    }
+}
+
+impl<'a, T: AsRef<[u8]> + ?Sized> Packet<&'a T> {
+    pub fn payload(&self) -> &'a [u8] {
+        let inner = self.buffer.as_ref();
+        &inner[field::PAYLOAD]
     }
 }
 
 impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
     /// set ethernet type.
-    pub fn set_ethernet_type(&mut self, value: Protocol) {
+    pub fn set_protocol(&mut self, value: Protocol) {
         let data = self.buffer.as_mut();
         NetworkEndian::write_u16(&mut data[field::ETHERTYPE], value.into())
     }
-}
 
-impl<T: AsRef<[u8]>> IntoInner for Packet<T> {
-    type Inner = T;
-
-    fn into_inner(self) -> Self::Inner {
-        self.buffer
-    }
-}
-
-impl<T: AsRef<[u8]>> DestAddr for Packet<T> {
-    type Address = Address;
-
-    fn dest_addr(&self) -> Result<Self::Address> {
-        let inner = self.buffer.as_ref();
-        Ok((&inner[field::DESTINATION]).into())
-    }
-}
-
-impl<T: AsRef<[u8]>> SrcAddr for Packet<T> {
-    type Address = Address;
-
-    fn src_addr(&self) -> Result<Self::Address> {
-        let inner = self.buffer.as_ref();
-        Ok((&inner[field::SOURCE]).into())
-    }
-}
-
-impl<T: AsRef<[u8]>> Payload for Packet<T> {
-    type Payload = [u8];
-
-    fn payload(&self) -> Result<&Self::Payload> {
-        let inner = self.buffer.as_ref();
-        Ok(&inner[field::PAYLOAD])
-    }
-}
-
-impl<T: AsRef<[u8]> + AsMut<[u8]>> DestAddrMut for Packet<T> {
-    type Address = Address;
-    fn set_dest_addr(&mut self, addr: &Self::Address) -> Result<()> {
+    pub fn set_dest_addr(&mut self, addr: Address) {
         let data = self.buffer.as_mut();
         data[field::DESTINATION].copy_from_slice(addr.as_bytes());
-        Ok(())
     }
-}
 
-impl<T: AsRef<[u8]> + AsMut<[u8]>> SrcAddrMut for Packet<T> {
-    type Address = Address;
-    fn set_src_addr(&mut self, addr: &Self::Address) -> Result<()> {
+    pub fn set_src_addr(&mut self, addr: Address) {
         let data = self.buffer.as_mut();
         data[field::SOURCE].copy_from_slice(addr.as_bytes());
-        Ok(())
     }
-}
 
-impl<T: AsRef<[u8]> + AsMut<[u8]>> PayloadMut for Packet<T> {
-    type Payload = [u8];
-
-    fn payload_mut(&mut self) -> Result<&mut Self::Payload> {
+    pub fn payload_mut(&mut self) -> &mut [u8] {
         let data = self.buffer.as_mut();
-        Ok(&mut data[field::PAYLOAD])
+        &mut data[field::PAYLOAD]
     }
 }
-
-

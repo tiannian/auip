@@ -8,6 +8,7 @@ mod tap;
 pub use tap::open_tap_device;
 
 use auip::phy::DeviceCapabilities;
+use auip_pkt::mac;
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
 
@@ -28,15 +29,14 @@ impl TapDevice {
 
 impl auip::phy::Driver for TapDevice {
     type ReturnReceiveFuture<'__async_trait> =
-        impl core::future::Future<Output = &'__async_trait mut[u8]>;
+        impl core::future::Future<Output = Option<mac::Packet<&'__async_trait [u8]>>>;
 
-    fn receive<'__async_trait>(
-        &'__async_trait mut self,
-    ) -> Self::ReturnReceiveFuture<'__async_trait> {
+    fn receive(&mut self) -> Self::ReturnReceiveFuture<'_> {
         async move {
             let size = self.fs.read(&mut self.rx_buffer).await.unwrap();
-            println!("Receive mac packet length: {}", size);
-            self.rx_buffer[..size].as_mut()
+            let buffer = self.rx_buffer[..size].as_ref();
+            let pkt = mac::Packet::EthernetII(mac::ethernet::Packet::new_checked(buffer).unwrap());
+            Some(pkt)
         }
     }
 

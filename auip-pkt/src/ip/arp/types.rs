@@ -1,3 +1,4 @@
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Hardware {
     Ethernet,
     Unknown(u16),
@@ -21,6 +22,7 @@ impl From<Hardware> for u16 {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Operation {
     Request,
     Reply,

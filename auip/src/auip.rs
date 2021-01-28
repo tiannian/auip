@@ -8,7 +8,7 @@ impl Auip {
     pub async fn trigger() {
         // receive all device packet.
         // select interface and send to interface.
-        // receive packet 
+        // receive packet
     }
 
     pub fn alloc_udp_socket() -> UdpSocket {

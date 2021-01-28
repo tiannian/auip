@@ -4,6 +4,7 @@ pub enum Error {
     Truncated,
     Illegal,
     Malformed,
+    Unrecognized,
 }
 
 /// Result for packet.

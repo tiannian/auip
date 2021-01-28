@@ -1,5 +1,5 @@
 mod driver;
-pub use driver::{Driver, DeviceCapabilities, DeviceLayer, DriverReceivePacket};
+pub use driver::{DeviceCapabilities, DeviceLayer, Driver};
 
 mod device;
 pub use device::Device;
