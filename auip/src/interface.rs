@@ -1,21 +1,21 @@
 //! interface layer.
 
-// use crate::phy::Device;
-use auip_pkt::{ip, mac};
-use managed::ManagedSlice;
+use crate::phy::{DevicePoll, Device, Driver};
+// use auip_pkt::{ip, mac};
+// use managed::ManagedSlice;
 
 pub struct Interface<'a> {
-    name: &'a str,
-    // device: &'a DeviceT,
+    pub name: &'a str,
+    pub device: &'a mut dyn DevicePoll,
     // ip_address: ManagedSlice<'a, ip::Address>,
     // mac_address: mac::Address,
 }
 
 impl<'a> Interface<'a> {
-    pub fn new(name: &'a str) -> Self {
+    pub fn new<D: Driver>(name: &'a str, device: &'a mut Device<D>) -> Self {
         Self {
             name,
-            // device,
+            device,
             // address: ManagedSlice::Borrowed(&mut[])
         }
     }

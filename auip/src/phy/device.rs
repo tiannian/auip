@@ -5,9 +5,21 @@ use super::driver::Driver;
 use auip_pkt::ip;
 use auip_pkt::mac;
 use crate::{Error, Result};
+use core::{task, pin, future::Future};
 
 pub struct Device<D: Driver> {
     driver: D,
+}
+
+pub trait DevicePoll {
+    fn poll_receive(&mut self, cx: &mut task::Context) -> task::Poll<Result<ip::Packet<&[u8]>>>;
+}
+
+impl<D: Driver> DevicePoll for Device<D> {
+    fn poll_receive(&mut self, cx: &mut task::Context) -> task::Poll<Result<ip::Packet<&[u8]>>> {
+        let mut fu = self.receive();
+        unsafe { pin::Pin::new_unchecked(&mut fu).poll(cx) }
+    }
 }
 
 impl<D: Driver> Device<D> {
