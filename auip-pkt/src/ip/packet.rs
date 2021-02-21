@@ -5,6 +5,7 @@ use crate::error::*;
 use crate::ip;
 use crate::mac;
 
+#[derive(Debug, Clone)]
 pub enum Packet<T: AsRef<[u8]>> {
     // IPv4(ipv4::Packet<T>),
     ARP(arp::Packet<T>),

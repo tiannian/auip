@@ -7,7 +7,6 @@ use auip_pkt::mac;
 use crate::{Error, Result};
 
 pub struct Device<D: Driver> {
-    // interfaces: ManagedMap<'a, mac::Address, &'a mut Interface<'a>>,
     driver: D,
 }
 
@@ -15,7 +14,6 @@ impl<D: Driver> Device<D> {
     pub fn new(driver: D) -> Self {
         // let
         Self {
-            // interfaces: ManagedMap::Borrowed(&mut []),
             driver,
         }
     }
