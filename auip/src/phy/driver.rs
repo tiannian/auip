@@ -24,7 +24,9 @@ pub struct DeviceCapabilities {
 pub trait Driver {
     fn capabilities(&self) -> DeviceCapabilities;
 
-    type ReturnReceiveFuture<'__async_trait>: Future<Output = Option<mac::Packet<&'__async_trait [u8]>>>;
+    type ReturnReceiveFuture<'__async_trait>: Future<
+        Output = Option<mac::Packet<&'__async_trait [u8]>>,
+    >;
 
     fn receive(&mut self) -> Self::ReturnReceiveFuture<'_>;
 }

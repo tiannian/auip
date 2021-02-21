@@ -10,7 +10,7 @@ pub mod stack;
 
 #[derive(Debug)]
 pub enum Error {
-    DriverPacketError
+    DriverPacketError,
 }
 
 pub type Result<R> = core::result::Result<R, Error>;

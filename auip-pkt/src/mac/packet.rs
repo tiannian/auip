@@ -50,7 +50,6 @@ impl<T: AsRef<[u8]>> Packet<T> {
             Packet::EthernetII(pkt) => pkt.src_addr(),
         }
     }
-
 }
 
 impl<'a, T: AsRef<[u8]> + ?Sized> Packet<&'a T> {

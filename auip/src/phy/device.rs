@@ -2,10 +2,10 @@ use super::driver::Driver;
 // use managed::ManagedMap;
 // use super::driver::DriverReceivePacket;
 // use crate::interface::Interface;
+use crate::{Error, Result};
 use auip_pkt::ip;
 use auip_pkt::mac;
-use crate::{Error, Result};
-use core::{task, pin, future::Future};
+use core::{future::Future, pin, task};
 
 pub struct Device<D: Driver> {
     driver: D,
@@ -25,9 +25,7 @@ impl<D: Driver> DevicePoll for Device<D> {
 impl<D: Driver> Device<D> {
     pub fn new(driver: D) -> Self {
         // let
-        Self {
-            driver,
-        }
+        Self { driver }
     }
 
     pub async fn receive(&mut self) -> Result<ip::Packet<&[u8]>> {
@@ -40,7 +38,7 @@ impl<D: Driver> Device<D> {
                     log::debug!("Receive layer3 packet \n{}", arp);
                     Ok(ip::Packet::ARP(arp))
                 }
-                _ => Ok(ip::Packet::IPv6)
+                _ => Ok(ip::Packet::IPv6),
             }
         } else {
             Err(Error::DriverPacketError)
