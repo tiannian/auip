@@ -7,12 +7,12 @@ use auip_pkt::ip;
 use auip_pkt::mac;
 use core::{future::Future, pin, task};
 
-pub struct Device<D: Driver> {
-    driver: D,
-}
-
 pub trait DevicePoll {
     fn poll_receive(&mut self, cx: &mut task::Context) -> task::Poll<Result<ip::Packet<&[u8]>>>;
+}
+
+pub struct Device<D: Driver> {
+    driver: D,
 }
 
 impl<D: Driver> DevicePoll for Device<D> {

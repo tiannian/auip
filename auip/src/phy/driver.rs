@@ -1,7 +1,9 @@
 //! phy layer.
 
 use auip_pkt::mac;
-use core::future::Future;
+use core::pin::Pin;
+use core::task::{Context, Poll};
+use crate::Result;
 // use auip_pkt::ip;
 
 /// Device work layer.
@@ -24,9 +26,8 @@ pub struct DeviceCapabilities {
 pub trait Driver {
     fn capabilities(&self) -> DeviceCapabilities;
 
-    type ReturnReceiveFuture<'__async_trait>: Future<
-        Output = Option<mac::Packet<&'__async_trait [u8]>>,
-    >;
+    fn poll_recv(self: Pin<&mut Self>, cx: Context<'_>) -> Poll<Result<mac::Packet<&'_ mut [u8]>>>;
 
-    fn receive(&mut self) -> Self::ReturnReceiveFuture<'_>;
+    fn poll_send(self: Pin<&mut Self>, cx: Context<'_>, pkt: mac::Packet<&'_ mut [u8]>)
+        -> Poll<Result<()>>;
 }

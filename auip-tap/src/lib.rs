@@ -1,6 +1,6 @@
 #![allow(incomplete_features)]
 #![feature(generic_associated_types)]
-#![feature(type_alias_impl_trait)]
+#![feature(min_type_alias_impl_trait)]
 mod error;
 pub use error::{Error, Result};
 
