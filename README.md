@@ -73,11 +73,12 @@ pub trait Device {
 
 Interface same as linux's interface.
 
-Interface have these features:
+Interface have these functions
 
-- Set IpAddress, CIDR and Gateway.
-- Bind with a Device.
-- Open Socket on interface.
+- Set IpAddress, CIDR.
+- Bind with a Device
+  - Receive packet from device, then send to socket or route.
+  - Send ip packet to device.
 
 
 
