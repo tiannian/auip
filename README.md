@@ -13,11 +13,27 @@ MAC Layer support these packet type:
   - [ ] VLAN (802.3q)
   - [ ] QinQ (802.3q)
 
+### Network Layer
 
+Network support these packet and function:
 
-* [ ] Impl stack at `auip`
-** [ ] Device
-** [ ] Mac
-** [ ] Ip
-** [ ] Transport
-** [ ] Interface
+- [X] Ipv4
+- [ ] Arp
+- [ ] ICMP
+- [ ] Ipv6
+- [ ] ICMPv6 (NDP)
+
+### Transport Layer
+
+- [ ] UDP
+
+### Application Layer
+
+- [ ] DHCP
+- [ ] DHCPv6
+
+## Architecture
+
+- [ ] Device
+- [ ] Interface
+- [ ] Socket
