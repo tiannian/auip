@@ -6,7 +6,7 @@
 
 * [ ] Impl packet parse and generater at `auip-pkt`.
 ** [*] Mac: EthernetII
-** [ ] Mac: IEEE802.11
+** [ ] Mac: IEEE802.3
 ** [ ] Mac: IEEE802.15.4
 ** [*] Ip: Ipv4
 ** [ ] Ip: Ipv6
