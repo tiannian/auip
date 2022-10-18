@@ -10,6 +10,3 @@ pub mod ethernet;
 
 mod protocol;
 pub use protocol::Protocol;
-
-mod packet;
-pub use packet::Packet;

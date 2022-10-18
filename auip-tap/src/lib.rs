@@ -1,6 +1,5 @@
 #![allow(incomplete_features)]
 #![feature(generic_associated_types)]
-#![feature(min_type_alias_impl_trait)]
 mod error;
 pub use error::{Error, Result};
 
@@ -27,24 +26,24 @@ impl TapDevice {
     }
 }
 
-impl auip::phy::Driver for TapDevice {
-    type ReturnReceiveFuture<'__async_trait> =
-        impl core::future::Future<Output = Option<mac::Packet<&'__async_trait [u8]>>>;
-
-    fn receive(&mut self) -> Self::ReturnReceiveFuture<'_> {
-        async move {
-            let size = self.fs.read(&mut self.rx_buffer).await.unwrap();
-            let buffer = self.rx_buffer[..size].as_ref();
-            let pkt = mac::Packet::EthernetII(mac::ethernet::Packet::new_checked(buffer).unwrap());
-            Some(pkt)
-        }
-    }
-
-    fn capabilities(&self) -> DeviceCapabilities {
-        DeviceCapabilities {
-            max_transmission_unit: 1536,
-            max_burst_size: Some(1536),
-            layer: auip::phy::DeviceLayer::Layer2,
-        }
-    }
-}
+/* impl auip::phy::Driver for TapDevice { */
+    /* type ReturnReceiveFuture<'__async_trait> = */
+    /*     impl core::future::Future<Output = Option<mac::Packet<&'__async_trait [u8]>>>; */
+    /*  */
+    /* fn receive(&mut self) -> Self::ReturnReceiveFuture<'_> { */
+    /*     async move { */
+    /*         let size = self.fs.read(&mut self.rx_buffer).await.unwrap(); */
+    /*         let buffer = self.rx_buffer[..size].as_ref(); */
+    /*         let pkt = mac::Packet::EthernetII(mac::ethernet::Packet::new_checked(buffer).unwrap()); */
+    /*         Some(pkt) */
+    /*     } */
+    /* } */
+    /*  */
+    /* fn capabilities(&self) -> DeviceCapabilities { */
+    /*     DeviceCapabilities { */
+    /*         max_transmission_unit: 1536, */
+    /*         max_burst_size: Some(1536), */
+    /*         layer: auip::phy::DeviceLayer::Layer2, */
+    /*     } */
+    /* } */
+/* } */
