@@ -5,6 +5,8 @@ pub enum Error {
     Illegal,
     Malformed,
     Unrecognized,
+    WrongLengthForEthernetAddress,
+    WrongLengthForIpv4Address,
 }
 
 /// Result for packet.

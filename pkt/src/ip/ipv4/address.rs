@@ -8,7 +8,7 @@ impl Display for Address {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let inner = self.0;
         f.write_fmt(format_args!(
-            "{}:{}:{}:{}",
+            "{}.{}.{}.{}",
             inner[0], inner[1], inner[2], inner[3]
         ))
     }

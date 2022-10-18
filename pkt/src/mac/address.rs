@@ -1,5 +1,8 @@
 use core::fmt::{self, Debug, Display};
 use core::format_args;
+use core::ops::Deref;
+
+use byteorder::{ByteOrder, NetworkEndian};
 
 #[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Default)]
 pub struct Address(pub [u8; 6]);
@@ -8,7 +11,7 @@ impl Display for Address {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let inner = self.0;
         f.write_fmt(format_args!(
-            "{:02x}-{:02x}-{:02x}-{:02x}-{:02x}-{:02x}",
+            "{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
             inner[0], inner[1], inner[2], inner[3], inner[4], inner[5]
         ))
     }
@@ -34,7 +37,7 @@ impl From<&[u8]> for Address {
 
 impl AsRef<[u8]> for Address {
     fn as_ref(&self) -> &[u8] {
-        &self.as_bytes()
+        self.as_bytes()
     }
 }
 
@@ -69,5 +72,45 @@ impl Address {
 
     pub fn is_local(&self) -> bool {
         self.0[0] & 0x02 != 0
+    }
+}
+
+#[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Default)]
+pub struct VlanId(pub u16);
+
+impl From<u16> for VlanId {
+    fn from(v: u16) -> Self {
+        Self(v)
+    }
+}
+
+impl From<VlanId> for u16 {
+    fn from(v: VlanId) -> Self {
+        v.0
+    }
+}
+
+impl AsRef<u16> for VlanId {
+    fn as_ref(&self) -> &u16 {
+        &self.0
+    }
+}
+
+impl Deref for VlanId {
+    type Target = u16;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl VlanId {
+    pub fn from_bytes_unchecked(buf: &[u8]) -> Self {
+        let mut bytes = [0u8; 2];
+
+        bytes[0] = 0x0F & buf[0];
+        bytes[1] = buf[1];
+
+        VlanId(NetworkEndian::read_u16(&bytes))
     }
 }

@@ -10,8 +10,8 @@ MAC Layer support these packet type:
 
 - [X] EthernetII
 - [X] IEEE802.3
-  - [ ] VLAN (802.3q)
-  - [ ] QinQ (802.3q)
+  - [X] VLAN (802.3q)
+  - [X] QinQ (802.3q)
 
 ### Network Layer
 

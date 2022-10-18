@@ -1,3 +1,5 @@
+use super::VlanId;
+
 pub mod consts {
     pub const IPV4: u16 = 0x0800;
     pub const IPV6: u16 = 0x86DD;
@@ -7,20 +9,18 @@ pub mod consts {
     pub const IEEE802_3: u16 = 0x05DC;
 }
 
-
 /// Ethernet payload type.
 #[derive(Debug, Clone)]
 pub enum Protocol {
-
     IPv4,
 
     IPv6,
 
     ARP,
 
-    IEEE8021Q,
+    IEEE8021Q(VlanId),
 
-    QinQ,
+    QinQ(VlanId, VlanId),
 
     /// IEEE802.3
     Length(u16),
@@ -29,31 +29,44 @@ pub enum Protocol {
 }
 
 impl From<u16> for Protocol {
-    fn from(value: u16) -> Self {
-        if value < consts::IEEE802_3 {
-            Protocol::Length(value)
+    fn from(ty: u16) -> Self {
+        if ty < consts::IEEE802_3 {
+            Self::Length(ty)
         } else {
-            match value {
-                consts::IPV4 => Protocol::IPv4,
-                consts::IPV6 => Protocol::IPv6,
-                consts::ARP => Protocol::ARP,
-                consts::IEEE802_1Q => Protocol::IEEE8021Q,
-                _ => Protocol::Unknown(value),
+            match ty {
+                consts::ARP => Self::ARP,
+                consts::IPV4 => Self::IPv4,
+                consts::IPV6 => Self::IPv6,
+                _ => Self::Unknown(ty),
             }
         }
     }
 }
 
 impl From<Protocol> for u16 {
-    fn from(value: Protocol) -> Self {
-        match value {
+    fn from(e: Protocol) -> u16 {
+        match e {
+            Protocol::ARP => consts::ARP,
             Protocol::IPv4 => consts::IPV4,
             Protocol::IPv6 => consts::IPV6,
-            Protocol::ARP => consts::ARP,
-            Protocol::IEEE8021Q => consts::Q_IN_Q,
-            Protocol::QinQ => consts::Q_IN_Q,
-            Protocol::Unknown(v) => v,
+            Protocol::IEEE8021Q(_) => consts::IEEE802_1Q,
+            Protocol::QinQ(_, _) => consts::Q_IN_Q,
             Protocol::Length(v) => v,
+            Protocol::Unknown(v) => v,
+        }
+    }
+}
+
+impl From<&Protocol> for u16 {
+    fn from(e: &Protocol) -> u16 {
+        match e {
+            Protocol::ARP => consts::ARP,
+            Protocol::IPv4 => consts::IPV4,
+            Protocol::IPv6 => consts::IPV6,
+            Protocol::IEEE8021Q(_) => consts::IEEE802_1Q,
+            Protocol::QinQ(_, _) => consts::Q_IN_Q,
+            Protocol::Length(v) => *v,
+            Protocol::Unknown(v) => *v,
         }
     }
 }

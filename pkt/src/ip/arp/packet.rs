@@ -1,7 +1,5 @@
-use super::Repr;
-use super::{Hardware, Operation};
-use crate::error::*;
-use crate::mac::Protocol;
+use super::{consts, Operation, HardwareAddress, ProtocolAddress};
+use crate::{error::*, mac, ip::ipv4::Address};
 use byteorder::{ByteOrder, NetworkEndian};
 use core::fmt::{self, Display};
 
@@ -12,8 +10,13 @@ pub struct Packet<T: AsRef<[u8]>> {
 
 impl<T: AsRef<[u8]>> Display for Packet<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let repr = Repr::parse(self).unwrap();
-        f.write_fmt(format_args!("{}", repr))
+        f.write_str("Arp Packet:")?;
+        f.write_fmt(format_args!(
+            "{:?} to {:?}, Op: {:?}",
+            self.source_hardware_address(),
+            self.target_hardware_address(),
+            self.operation()
+        ))
     }
 }
 
@@ -70,28 +73,84 @@ impl<T: AsRef<[u8]>> Packet<T> {
         }
     }
 
-    /// Return the hardware type field.
-    pub fn hardware_type(&self) -> Hardware {
+    /// Return the source hardware address.
+    pub fn source_hardware_address(&self) -> Result<HardwareAddress> {
         let data = self.buffer.as_ref();
         let raw = NetworkEndian::read_u16(&data[field::HTYPE]);
-        Hardware::from(raw)
+
+        if raw == consts::HARDWARE_ETHERNET {
+            if self.hardware_len() == consts::HARDWARE_ETHERNET_LENGTH {
+                let raw_addr = self.source_hardware_addr();
+                let addr = mac::Address::from(raw_addr);
+                Ok(HardwareAddress::Ethernet(addr))
+            } else {
+                Err(Error::WrongLengthForEthernetAddress)
+            }
+        } else {
+            Ok(HardwareAddress::from(raw))
+        }
+    }
+
+    /// Return the target hardware address.
+    pub fn target_hardware_address(&self) -> Result<HardwareAddress> {
+        let data = self.buffer.as_ref();
+        let raw = NetworkEndian::read_u16(&data[field::HTYPE]);
+
+        if raw == consts::HARDWARE_ETHERNET {
+            if self.hardware_len() == consts::HARDWARE_ETHERNET_LENGTH {
+                let raw_addr = self.target_hardware_addr();
+                let addr = mac::Address::from(raw_addr);
+                Ok(HardwareAddress::Ethernet(addr))
+            } else {
+                Err(Error::WrongLengthForEthernetAddress)
+            }
+        } else {
+            Ok(HardwareAddress::from(raw))
+        }
     }
 
     /// Return the protocol type field.
-    pub fn protocol_type(&self) -> Protocol {
+    pub fn source_protocol_address(&self) -> Result<ProtocolAddress> {
         let data = self.buffer.as_ref();
         let raw = NetworkEndian::read_u16(&data[field::PTYPE]);
-        Protocol::from(raw)
+        if raw == consts::HARDWARE_ETHERNET {
+            if self.hardware_len() == consts::HARDWARE_ETHERNET_LENGTH {
+                let raw_addr = self.source_protocol_addr();
+                let addr = Address::from(raw_addr);
+                Ok(ProtocolAddress::IPv4(addr))
+            } else {
+                Err(Error::WrongLengthForIpv4Address)
+            }
+        } else {
+            Ok(ProtocolAddress::from(raw))
+        }
+    }
+
+    /// Return the target protocol address.
+    pub fn target_protocol_address(&self) -> Result<ProtocolAddress> {
+        let data = self.buffer.as_ref();
+        let raw = NetworkEndian::read_u16(&data[field::PTYPE]);
+        if raw == consts::HARDWARE_ETHERNET {
+            if self.hardware_len() == consts::HARDWARE_ETHERNET_LENGTH {
+                let raw_addr = self.target_protocol_addr();
+                let addr = Address::from(raw_addr);
+                Ok(ProtocolAddress::IPv4(addr))
+            } else {
+                Err(Error::WrongLengthForIpv4Address)
+            }
+        } else {
+            Ok(ProtocolAddress::from(raw))
+        }
     }
 
     /// Return the hardware length field.
-    pub fn hardware_len(&self) -> u8 {
+    fn hardware_len(&self) -> u8 {
         let data = self.buffer.as_ref();
         data[field::HLEN]
     }
 
     /// Return the protocol length field.
-    pub fn protocol_len(&self) -> u8 {
+    fn protocol_len(&self) -> u8 {
         let data = self.buffer.as_ref();
         data[field::PLEN]
     }
@@ -103,44 +162,36 @@ impl<T: AsRef<[u8]>> Packet<T> {
         Operation::from(raw)
     }
 
-    /// Return the source hardware address field.
-    pub fn source_hardware_addr(&self) -> &[u8] {
+    fn source_hardware_addr(&self) -> &[u8] {
         let data = self.buffer.as_ref();
         &data[field::source_hardware_address(self.hardware_len(), self.protocol_len())]
     }
 
-    /// Return the source protocol address field.
-    pub fn source_protocol_addr(&self) -> &[u8] {
+    fn source_protocol_addr(&self) -> &[u8] {
         let data = self.buffer.as_ref();
         &data[field::source_protocol_address(self.hardware_len(), self.protocol_len())]
     }
 
-    /// Return the target hardware address field.
-    pub fn target_hardware_addr(&self) -> &[u8] {
+    fn target_hardware_addr(&self) -> &[u8] {
         let data = self.buffer.as_ref();
         &data[field::target_hardware_address(self.hardware_len(), self.protocol_len())]
     }
 
-    /// Return the target protocol address field.
-    pub fn target_protocol_addr(&self) -> &[u8] {
+    fn target_protocol_addr(&self) -> &[u8] {
         let data = self.buffer.as_ref();
         &data[field::target_protocol_address(self.hardware_len(), self.protocol_len())]
-    }
-
-    pub fn into_inner(self) -> T {
-        self.buffer
     }
 }
 
 impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
     /// Set the hardware type field.
-    pub fn set_hardware_type(&mut self, value: Hardware) {
+    pub fn set_hardware(&mut self, value: HardwareAddress) {
         let data = self.buffer.as_mut();
         NetworkEndian::write_u16(&mut data[field::HTYPE], value.into())
     }
 
     /// Set the protocol type field.
-    pub fn set_protocol_type(&mut self, value: Protocol) {
+    pub fn set_protocol(&mut self, value: ProtocolAddress) {
         let data = self.buffer.as_mut();
         NetworkEndian::write_u16(&mut data[field::PTYPE], value.into())
     }

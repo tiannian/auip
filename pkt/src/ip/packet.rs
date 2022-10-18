@@ -13,15 +13,15 @@ pub enum Packet<T: AsRef<[u8]>> {
 }
 
 impl<T: AsRef<[u8]>> Packet<T> {
-    pub fn from_layer2_pkt(pkt: mac::Packet<&[u8]>) -> Result<ip::Packet<&[u8]>> {
-        // let protocol = pkt.protocol();
-        let buffer = pkt.payload()?;
-        match pkt.protocol() {
-            mac::Protocol::ARP => {
-                let arp = arp::Packet::new_checked(buffer)?;
-                Ok(Packet::ARP(arp))
-            }
-            _ => Ok(Packet::IPv6),
-        }
-    }
+    /*     pub fn from_layer2_pkt(pkt: mac::ethernet::Packet<&[u8]>) -> Result<ip::Packet<&[u8]>> { */
+    /* // let protocol = pkt.protocol(); */
+    /* let buffer = pkt.payload(); */
+    /* match pkt.protocol() { */
+    /*     mac::Protocol::ARP => { */
+    /*         let arp = arp::Packet::new_checked(buffer)?; */
+    /*         Ok(Packet::ARP(arp)) */
+    /*     } */
+    /*     _ => Ok(Packet::IPv6), */
+    /* } */
+    /* } */
 }

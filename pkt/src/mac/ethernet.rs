@@ -1,8 +1,8 @@
 //! Ethernet packet.
 
-use crate::prelude::IntoInner;
+use crate::{prelude::IntoInner, Error, Result};
 
-use super::{Address, Protocol};
+use super::{consts, Address, Protocol, VlanId};
 use byteorder::{ByteOrder, NetworkEndian};
 use core::fmt::{self, Display};
 
@@ -44,12 +44,13 @@ mod field {
 
 impl<T: AsRef<[u8]>> Display for Packet<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("Mac Packet:")?;
         f.write_fmt(format_args!(
-            "\tDestination: {}\n\tSource: {}\n\tProtocol: {:?}",
+            "Destination: {}, Source: {}, Protocol: {:?}, Payload Length: {}",
             self.dest_addr(),
             self.src_addr(),
             self.protocol(),
-            // &self.as_ref()[field::PAYLOAD]
+            self.payload_len(),
         ))
     }
 }
@@ -80,45 +81,60 @@ impl<T: AsRef<[u8]>> Packet<T> {
         Packet { buffer }
     }
 
-    // /// new checked packet.
-/*     pub fn new_checked(buffer: T) -> Result<Packet<T>> { */
-    /*     let packet = Self::new_unchecked(buffer); */
-    /*     packet.check_len()?; */
-    /*     Ok(packet) */
-    /* } */
-/*  */
-/*     fn check_len(&self) -> Result<()> { */
-    /*     let len = self.buffer.as_ref().len(); */
-    /*     if len < field::PAYLOAD.start { */
-    /*         Err(Error::Truncated) */
-    /*     } else { */
-    /*         Ok(()) */
-    /*     } */
-    /* } */
-    /*  */
-    /* /// get buffer length for special payload length. */
-    /* pub fn buffer_len(payload_len: usize) -> usize { */
-    /*     field::PAYLOAD.start + payload_len */
-    /* } */
+    /// new checked packet.
+    pub fn new_checked(buffer: T) -> Result<Packet<T>> {
+        let packet = Self::new_unchecked(buffer);
+        packet.check_len()?;
+        Ok(packet)
+    }
 
-    /// get ethernet type.
+    fn check_len(&self) -> Result<()> {
+        let len = self.buffer.as_ref().len();
+
+        let header_len = self.header_len();
+
+        if len < header_len {
+            Err(Error::Truncated)
+        } else {
+            Ok(())
+        }
+    }
+
     pub fn protocol(&self) -> Protocol {
         let data = self.buffer.as_ref();
-        let raw = NetworkEndian::read_u16(&data[field::ETHERTYPE]);
-        let ty = Protocol::from(raw);
 
-        if let Protocol::IEEE8021Q = ty {
-            let raw = NetworkEndian::read_u16(&data[field::ieee8021q::ETHERTYPE]);
-            let sub = Protocol::from(raw);
+        let ty = NetworkEndian::read_u16(&data[field::ETHERTYPE]);
 
-            if let Protocol::IEEE8021Q = sub {
-                Protocol::QinQ
+        if ty == consts::IEEE802_1Q {
+            let ty = NetworkEndian::read_u16(&data[field::ieee8021q::ETHERTYPE]);
+
+            let vlanid = VlanId::from_bytes_unchecked(&data[field::ieee8021q::PRI_CFI_VID]);
+
+            if ty == consts::IEEE802_1Q {
+                let vlanid1 = VlanId::from_bytes_unchecked(&data[field::qinq::PRI_CFI_VID]);
+                Protocol::QinQ(vlanid, vlanid1)
             } else {
-                Protocol::IEEE8021Q
+                Protocol::IEEE8021Q(vlanid)
             }
         } else {
-            ty
+            Protocol::from(ty)
         }
+    }
+
+    pub fn header_len(&self) -> usize {
+        let protocol = self.protocol();
+
+        match protocol {
+            Protocol::IEEE8021Q(_) => field::ieee8021q::PAYLOAD.start,
+            Protocol::QinQ(_, _) => field::qinq::PAYLOAD.start,
+            _ => field::ethernetii::PAYLOAD.start,
+        }
+    }
+
+    pub fn payload_len(&self) -> usize {
+        let len = self.header_len();
+
+        self.buffer.as_ref().len() - len
     }
 
     pub fn dest_addr(&self) -> Address {
@@ -130,20 +146,38 @@ impl<T: AsRef<[u8]>> Packet<T> {
         let inner = self.buffer.as_ref();
         (&inner[field::SOURCE]).into()
     }
-}
 
-/* impl<'a, T: AsRef<[u8]> + ?Sized> Packet<&'a T> { */
-    /* pub fn payload(&self) -> &'a [u8] { */
-    /*     let inner = self.buffer.as_ref(); */
-    /*     &inner[field::PAYLOAD] */
-    /* } */
-/* } */
+    pub fn payload(&self) -> &[u8] {
+        let inner = self.buffer.as_ref();
+
+        let protocol = self.protocol();
+
+        match protocol {
+            Protocol::IEEE8021Q(_) => &inner[field::ieee8021q::PAYLOAD],
+            Protocol::QinQ(_, _) => &inner[field::qinq::PAYLOAD],
+            _ => &inner[field::ethernetii::PAYLOAD],
+        }
+    }
+}
 
 impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
     /// set ethernet type.
-    pub fn set_protocol(&mut self, value: Protocol) {
+    pub fn set_protocol(&mut self, protocol: Protocol) {
         let data = self.buffer.as_mut();
-        NetworkEndian::write_u16(&mut data[field::ETHERTYPE], value.into())
+
+        match &protocol {
+            Protocol::IEEE8021Q(vlanid) => {
+                NetworkEndian::write_u16(&mut data[field::ieee8021q::PRI_CFI_VID], vlanid.0)
+            }
+            Protocol::QinQ(vlanid, vlanid1) => {
+                NetworkEndian::write_u16(&mut data[field::ieee8021q::PRI_CFI_VID], vlanid.0);
+                NetworkEndian::write_u16(&mut data[field::qinq::ETHERTYPE], (&protocol).into());
+                NetworkEndian::write_u16(&mut data[field::qinq::PRI_CFI_VID], vlanid1.0);
+            }
+            _ => {}
+        }
+
+        NetworkEndian::write_u16(&mut data[field::ETHERTYPE], protocol.into())
     }
 
     pub fn set_dest_addr(&mut self, addr: Address) {
@@ -156,8 +190,15 @@ impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
         data[field::SOURCE].copy_from_slice(addr.as_bytes());
     }
 
-/*     pub fn payload_mut(&mut self) -> &mut [u8] { */
-        /* let data = self.buffer.as_mut(); */
-        /* &mut data[field::PAYLOAD] */
-    /* } */
+    pub fn payload_mut(&mut self) -> &mut [u8] {
+        let protocol = self.protocol();
+
+        let inner = self.buffer.as_mut();
+
+        match protocol {
+            Protocol::IEEE8021Q(_) => &mut inner[field::ieee8021q::PAYLOAD],
+            Protocol::QinQ(_, _) => &mut inner[field::qinq::PAYLOAD],
+            _ => &mut inner[field::ethernetii::PAYLOAD],
+        }
+    }
 }
