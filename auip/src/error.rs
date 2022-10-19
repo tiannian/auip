@@ -1,5 +1,16 @@
+use core::fmt::Debug;
+
 #[derive(Debug)]
 pub enum Error {
+    NoSpaceForAddrsStorage,
+
+    PacketError(auip_pkt::Error),
 }
 
-pub type Result<R> = core::result::Result<R, Error>;
+impl From<auip_pkt::Error> for Error {
+    fn from(p: auip_pkt::Error) -> Self {
+        Self::PacketError(p)
+    }
+}
+
+pub type Result<T> = core::result::Result<T, Error>;

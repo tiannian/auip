@@ -18,3 +18,9 @@ pub enum Address {
     // An IPv6 address.
     // Ipv6(Ipv6Address),
 }
+
+impl Default for Address {
+    fn default() -> Self {
+        Self::Unspecified
+    }
+}

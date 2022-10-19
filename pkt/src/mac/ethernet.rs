@@ -121,6 +121,10 @@ impl<T: AsRef<[u8]>> Packet<T> {
         }
     }
 
+    /*     pub fn upper_protocol(&self) -> Protocol { */
+    /*  */
+    /* } */
+
     pub fn header_len(&self) -> usize {
         let protocol = self.protocol();
 
