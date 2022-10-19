@@ -18,7 +18,7 @@ MAC Layer support these packet type:
 Network support these packet and function:
 
 - [X] Ipv4
-- [ ] Arp
+- [X] Arp
 - [ ] ICMP
 - [ ] Ipv6
 - [ ] ICMPv6 (NDP)
@@ -35,8 +35,10 @@ Network support these packet and function:
 
 ## Architecture
 
-- [ ] Device
+- [X] Device
 - [ ] Interface
+- [ ] Storage
+- [ ] Hook
 - [ ] Socket
 
 ### Device
@@ -50,23 +52,12 @@ Device is only a trait, you must bind a device to a interface.
 
 ``` rust
 pub trait Device {
-    type Error: Into<Error> + Debug;
+    fn send(&mut self, buffer: &[u8]) -> Result<()>;
 
-    type RecvPacket: AsRef<[u8]>;
+    fn recv(&mut self) -> Result<Option<&[u8]>>;
 
-    type RecvFuture: Future<Result<mac::Packet<Self::RecvPacket>, Self::Error>>;
-
-    fn recv(&self) -> Self::RecvFuture;
-
-    type SendPacket: AsRef<[u8]> + AsMut<[u8]>;
-
-    fn send(&self, pkt: &Packet<Self::SendPacket>) -> Result<(), Self::Error>;
-
-    fn alloc_packet(&mut self) -> Self::SendPacket;
-
-    fn mac_address(&self) -> mac::Address;
+    fn medium(&self) -> Medium;
 }
-
 ```
 
 ### Interface
@@ -75,12 +66,41 @@ Interface same as linux's interface.
 
 Interface have these functions
 
-- Set IpAddress, CIDR.
+- Set CIDR and MAC Address.
 - Bind with a Device
-  - Receive packet from device, then send to socket or route.
+  - Receive packet from device, then send to socket.
   - Send ip packet to device.
+- Drop or accept packet based on
+  - Vlan ID
+  - Mac Address
+  - IP Address
+- Hook baseed on process pcaket.
 
+### Storage
 
+Beacuse auip support both nostd and alloc, all storage declared as trait.
 
+- AddrsStorage: Storage addresses for interface, include 1 mac address and multiple cidr.
+- Layer3PacketStorage: As a buffer to store layer3 packet need send to device.
 
+### Hook
+
+Based on packet process, interface can register a hook. Hook will include some function,
+these function will called when packet is procedded.
+
+Throw hook, we can build macvlan, vlan device, bridge, switch or some other special network interface. 
+
+Hook support these function.
+
+- process_layer2_packet_begin
+- process_layer3_packet_begin
+- process_ip_packet_begin
+- process_ipv4_packet_begin
+- process_ipv4_packet_end
+- process_ipv6_packet_begin
+- process_ipv6_packet_end
+- process_arp_packet_begin
+- process_arp_packet_end
+- process_layer3_packet_end
+- process_layer2_packet_end
 
