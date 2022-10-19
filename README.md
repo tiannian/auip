@@ -89,18 +89,7 @@ Based on packet process, interface can register a hook. Hook will include some f
 these function will called when packet is procedded.
 
 Throw hook, we can build macvlan, vlan device, bridge, switch or some other special network interface. 
+Also, we can use hook to build cross interface packet route, 6lowpan gateway, ipv6 on ble gateway and so on.
 
-Hook support these function.
-
-- process_layer2_packet_begin
-- process_layer3_packet_begin
-- process_ip_packet_begin
-- process_ipv4_packet_begin
-- process_ipv4_packet_end
-- process_ipv6_packet_begin
-- process_ipv6_packet_end
-- process_arp_packet_begin
-- process_arp_packet_end
-- process_layer3_packet_end
-- process_layer2_packet_end
+Beacuse the fundamental of auip is direct stack model, we need use hook to cross packet.
 
