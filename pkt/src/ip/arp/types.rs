@@ -80,7 +80,7 @@ pub enum ProtocolAddress {
 
 impl From<u16> for ProtocolAddress {
     fn from(ty: u16) -> Self {
-         Self::Unknown(ty)
+        Self::Unknown(ty)
     }
 }
 

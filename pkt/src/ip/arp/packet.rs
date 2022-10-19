@@ -12,9 +12,11 @@ impl<T: AsRef<[u8]>> Display for Packet<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("Arp Packet:")?;
         f.write_fmt(format_args!(
-            "{:?} to {:?}, Op: {:?}",
+            "{:?}: {:?} to {:?}: {:?}, Op: {:?}",
             self.source_hardware_address(),
+            self.source_protocol_address(),
             self.target_hardware_address(),
+            self.target_protocol_address(),
             self.operation()
         ))
     }

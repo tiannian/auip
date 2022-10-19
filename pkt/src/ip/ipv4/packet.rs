@@ -1,13 +1,25 @@
+use core::fmt::{self, Display, Formatter};
+
+use crate::{ip::Protocol, prelude::IntoInner, utils::checksum, Error, Result};
+
 use super::Address;
-use crate::error::*;
-use crate::ip::Protocol;
-use crate::prelude::IntoInner;
-use crate::utils::checksum;
 use byteorder::{ByteOrder, NetworkEndian};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Packet<T> {
     buffer: T,
+}
+
+impl<T: AsRef<[u8]>> Display for Packet<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str("Ipv4 Packet:}")?;
+        f.write_fmt(format_args!(
+            "Destination: {}, Source: {}",
+            self.dst_addr(),
+            self.src_addr()
+        ))?;
+        Ok(())
+    }
 }
 
 mod field {
@@ -140,6 +152,20 @@ impl<T: AsRef<[u8]>> Packet<T> {
     pub fn protocol(&self) -> Protocol {
         let data = self.buffer.as_ref();
         Protocol::from(data[field::PROTOCOL])
+    }
+
+    /// Return the source address field.
+    #[inline]
+    pub fn src_addr(&self) -> Address {
+        let data = self.buffer.as_ref();
+        Address::from_bytes(&data[field::SRC_ADDR])
+    }
+
+    /// Return the destination address field.
+    #[inline]
+    pub fn dst_addr(&self) -> Address {
+        let data = self.buffer.as_ref();
+        Address::from_bytes(&data[field::DST_ADDR])
     }
 
     /// Validate the header checksum.
