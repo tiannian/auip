@@ -5,7 +5,7 @@ use crate::prelude::IntoInner;
 use crate::utils::checksum;
 use byteorder::{ByteOrder, NetworkEndian};
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Packet<T> {
     buffer: T,
 }
@@ -48,14 +48,12 @@ impl<T: AsRef<[u8]>> Packet<T> {
 
     fn check_len(&self) -> Result<()> {
         let len = self.buffer.as_ref().len();
-        if len < field::DST_ADDR.end {
-            Err(Error::Truncated)
-        } else if len < self.header_len() as usize {
-            Err(Error::Truncated)
-        } else if self.header_len() as u16 > self.total_len() {
-            Err(Error::Malformed)
-        } else if len < self.total_len() as usize {
-            Err(Error::Truncated)
+        if len < field::DST_ADDR.end
+            || len < self.header_len() as usize
+            || self.header_len() as u16 > self.total_len()
+            || len < self.total_len() as usize
+        {
+            Err(Error::WrongLengthForIpv4Packet)
         } else {
             Ok(())
         }
@@ -174,12 +172,14 @@ impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
     }
 
     /// Set the Differential Services Code Point field.
+    #[inline]
     pub fn set_dscp(&mut self, value: u8) {
         let data = self.buffer.as_mut();
         data[field::DSCP_ECN] = (data[field::DSCP_ECN] & !0xfc) | (value << 2)
     }
 
     /// Set the Explicit Congestion Notification field.
+    #[inline]
     pub fn set_ecn(&mut self, value: u8) {
         let data = self.buffer.as_mut();
         data[field::DSCP_ECN] = (data[field::DSCP_ECN] & !0x03) | (value & 0x03)

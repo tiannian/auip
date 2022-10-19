@@ -98,6 +98,6 @@ impl From<&[u8]> for Address {
 
 impl AsRef<[u8]> for Address {
     fn as_ref(&self) -> &[u8] {
-        &self.as_bytes()
+        self.as_bytes()
     }
 }

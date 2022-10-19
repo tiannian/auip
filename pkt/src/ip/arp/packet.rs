@@ -1,10 +1,10 @@
-use super::{consts, Operation, HardwareAddress, ProtocolAddress};
-use crate::{error::*, mac, ip::ipv4::Address};
+use super::{consts, HardwareAddress, Operation, ProtocolAddress};
+use crate::{error::*, ip::ipv4::Address, mac};
 use byteorder::{ByteOrder, NetworkEndian};
 use core::fmt::{self, Display};
 
-#[derive(Debug, PartialEq, Clone)]
-pub struct Packet<T: AsRef<[u8]>> {
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct Packet<T> {
     buffer: T,
 }
 
@@ -63,11 +63,10 @@ impl<T: AsRef<[u8]>> Packet<T> {
 
     fn check_len(&self) -> Result<()> {
         let len = self.buffer.as_ref().len();
-        if len < field::OPER.end {
-            Err(Error::Truncated)
-        } else if len < field::target_protocol_address(self.hardware_len(), self.protocol_len()).end
+        if len < field::OPER.end
+            || len < field::target_protocol_address(self.hardware_len(), self.protocol_len()).end
         {
-            Err(Error::Truncated)
+            Err(Error::WrongLengthForArpPacket)
         } else {
             Ok(())
         }
@@ -143,40 +142,96 @@ impl<T: AsRef<[u8]>> Packet<T> {
         }
     }
 
-    /// Return the hardware length field.
-    fn hardware_len(&self) -> u8 {
-        let data = self.buffer.as_ref();
-        data[field::HLEN]
-    }
-
-    /// Return the protocol length field.
-    fn protocol_len(&self) -> u8 {
-        let data = self.buffer.as_ref();
-        data[field::PLEN]
-    }
-
     /// Return the operation field.
     pub fn operation(&self) -> Operation {
         let data = self.buffer.as_ref();
         let raw = NetworkEndian::read_u16(&data[field::OPER]);
         Operation::from(raw)
     }
+}
 
+impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
+    /// Set source hardware address
+    pub fn set_source_map(
+        &mut self,
+        hd_addr: HardwareAddress,
+        pc_addr: ProtocolAddress,
+    ) -> Result<()> {
+        self.set_hardware(&hd_addr);
+        if let HardwareAddress::Ethernet(addr) = hd_addr {
+            self.set_hardware_len(consts::HARDWARE_ETHERNET_LENGTH);
+            self.set_source_hardware_addr(addr.as_ref());
+        }
+
+        self.set_protocol(&pc_addr);
+        if let ProtocolAddress::IPv4(addr) = pc_addr {
+            self.set_protocol_len(consts::PROTOCOL_IPV4_LENGTH);
+            self.set_source_protocol_addr(addr.as_ref());
+        }
+
+        Ok(())
+    }
+
+    /// Set target hardware address
+    pub fn set_target_map(
+        &mut self,
+        hd_addr: HardwareAddress,
+        pc_addr: ProtocolAddress,
+    ) -> Result<()> {
+        self.set_hardware(&hd_addr);
+        if let HardwareAddress::Ethernet(addr) = hd_addr {
+            self.set_hardware_len(consts::HARDWARE_ETHERNET_LENGTH);
+            self.set_target_hardware_addr(addr.as_ref());
+        }
+
+        self.set_protocol(&pc_addr);
+        if let ProtocolAddress::IPv4(addr) = pc_addr {
+            self.set_protocol_len(consts::PROTOCOL_IPV4_LENGTH);
+            self.set_target_protocol_addr(addr.as_ref());
+        }
+
+        Ok(())
+    }
+
+    /// Set the operation field.
+    pub fn set_operation(&mut self, value: Operation) {
+        let data = self.buffer.as_mut();
+        NetworkEndian::write_u16(&mut data[field::OPER], value.into())
+    }
+}
+
+impl<T: AsRef<[u8]>> Packet<T> {
+    #[inline]
+    fn hardware_len(&self) -> u8 {
+        let data = self.buffer.as_ref();
+        data[field::HLEN]
+    }
+
+    #[inline]
+    fn protocol_len(&self) -> u8 {
+        let data = self.buffer.as_ref();
+        data[field::PLEN]
+    }
+
+    #[inline]
     fn source_hardware_addr(&self) -> &[u8] {
         let data = self.buffer.as_ref();
         &data[field::source_hardware_address(self.hardware_len(), self.protocol_len())]
     }
 
+    #[inline]
     fn source_protocol_addr(&self) -> &[u8] {
         let data = self.buffer.as_ref();
         &data[field::source_protocol_address(self.hardware_len(), self.protocol_len())]
     }
 
+    #[inline]
     fn target_hardware_addr(&self) -> &[u8] {
         let data = self.buffer.as_ref();
         &data[field::target_hardware_address(self.hardware_len(), self.protocol_len())]
     }
 
+    #[inline]
     fn target_protocol_addr(&self) -> &[u8] {
         let data = self.buffer.as_ref();
         &data[field::target_protocol_address(self.hardware_len(), self.protocol_len())]
@@ -185,40 +240,39 @@ impl<T: AsRef<[u8]>> Packet<T> {
 
 impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
     /// Set the hardware type field.
-    pub fn set_hardware(&mut self, value: HardwareAddress) {
+    #[inline]
+    fn set_hardware(&mut self, value: &HardwareAddress) {
         let data = self.buffer.as_mut();
         NetworkEndian::write_u16(&mut data[field::HTYPE], value.into())
     }
 
     /// Set the protocol type field.
-    pub fn set_protocol(&mut self, value: ProtocolAddress) {
+    #[inline]
+    fn set_protocol(&mut self, value: &ProtocolAddress) {
         let data = self.buffer.as_mut();
         NetworkEndian::write_u16(&mut data[field::PTYPE], value.into())
     }
 
     /// Set the hardware length field.
-    pub fn set_hardware_len(&mut self, value: u8) {
+    #[inline]
+    fn set_hardware_len(&mut self, value: u8) {
         let data = self.buffer.as_mut();
         data[field::HLEN] = value
     }
 
     /// Set the protocol length field.
-    pub fn set_protocol_len(&mut self, value: u8) {
+    #[inline]
+    fn set_protocol_len(&mut self, value: u8) {
         let data = self.buffer.as_mut();
         data[field::PLEN] = value
-    }
-
-    /// Set the operation field.
-    pub fn set_operation(&mut self, value: Operation) {
-        let data = self.buffer.as_mut();
-        NetworkEndian::write_u16(&mut data[field::OPER], value.into())
     }
 
     /// Set the source hardware address field.
     ///
     /// # Panics
     /// The function panics if `value` is not `self.hardware_len()` long.
-    pub fn set_source_hardware_addr(&mut self, value: &[u8]) {
+    #[inline]
+    fn set_source_hardware_addr(&mut self, value: &[u8]) {
         let (hardware_len, protocol_len) = (self.hardware_len(), self.protocol_len());
         let data = self.buffer.as_mut();
         data[field::source_hardware_address(hardware_len, protocol_len)].copy_from_slice(value)
@@ -228,7 +282,8 @@ impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
     ///
     /// # Panics
     /// The function panics if `value` is not `self.protocol_len()` long.
-    pub fn set_source_protocol_addr(&mut self, value: &[u8]) {
+    #[inline]
+    fn set_source_protocol_addr(&mut self, value: &[u8]) {
         let (hardware_len, protocol_len) = (self.hardware_len(), self.protocol_len());
         let data = self.buffer.as_mut();
         data[field::source_protocol_address(hardware_len, protocol_len)].copy_from_slice(value)
@@ -238,7 +293,8 @@ impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
     ///
     /// # Panics
     /// The function panics if `value` is not `self.hardware_len()` long.
-    pub fn set_target_hardware_addr(&mut self, value: &[u8]) {
+    #[inline]
+    fn set_target_hardware_addr(&mut self, value: &[u8]) {
         let (hardware_len, protocol_len) = (self.hardware_len(), self.protocol_len());
         let data = self.buffer.as_mut();
         data[field::target_hardware_address(hardware_len, protocol_len)].copy_from_slice(value)
@@ -248,7 +304,8 @@ impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
     ///
     /// # Panics
     /// The function panics if `value` is not `self.protocol_len()` long.
-    pub fn set_target_protocol_addr(&mut self, value: &[u8]) {
+    #[inline]
+    fn set_target_protocol_addr(&mut self, value: &[u8]) {
         let (hardware_len, protocol_len) = (self.hardware_len(), self.protocol_len());
         let data = self.buffer.as_mut();
         data[field::target_protocol_address(hardware_len, protocol_len)].copy_from_slice(value)

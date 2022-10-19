@@ -57,7 +57,7 @@ impl Cidr {
             ((number >> 24) & 0xff) as u8,
             ((number >> 16) & 0xff) as u8,
             ((number >> 8) & 0xff) as u8,
-            ((number >> 0) & 0xff) as u8,
+            (number & 0xff) as u8,
         ];
 
         Address(data)
@@ -77,7 +77,7 @@ impl Cidr {
             ((number >> 24) & 0xff) as u8,
             ((number >> 16) & 0xff) as u8,
             ((number >> 8) & 0xff) as u8,
-            ((number >> 0) & 0xff) as u8,
+            (number & 0xff) as u8,
         ];
 
         Some(Address(data))

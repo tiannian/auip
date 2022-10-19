@@ -1,4 +1,4 @@
-use crate::{mac, ip::ipv4::Address};
+use crate::{ip::ipv4::Address, mac};
 
 pub mod consts {
     pub const HARDWARE_ETHERNET: u16 = 1;
@@ -9,6 +9,8 @@ pub mod consts {
     pub const OPERATION_REPLAY: u16 = 2;
 
     pub const PROTOCOL_IPV4: u16 = 0x0800;
+
+    pub const PROTOCOL_IPV4_LENGTH: u8 = 4;
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -19,9 +21,7 @@ pub enum HardwareAddress {
 
 impl From<u16> for HardwareAddress {
     fn from(v: u16) -> Self {
-        match v {
-            _ => Self::Unknown(v),
-        }
+        Self::Unknown(v)
     }
 }
 
@@ -30,6 +30,15 @@ impl From<HardwareAddress> for u16 {
         match v {
             HardwareAddress::Ethernet(_) => consts::HARDWARE_ETHERNET,
             HardwareAddress::Unknown(a) => a,
+        }
+    }
+}
+
+impl From<&HardwareAddress> for u16 {
+    fn from(v: &HardwareAddress) -> u16 {
+        match v {
+            HardwareAddress::Ethernet(_) => consts::HARDWARE_ETHERNET,
+            HardwareAddress::Unknown(a) => *a,
         }
     }
 }
@@ -71,9 +80,7 @@ pub enum ProtocolAddress {
 
 impl From<u16> for ProtocolAddress {
     fn from(ty: u16) -> Self {
-        match ty {
-            _ => Self::Unknown(ty),
-        }
+         Self::Unknown(ty)
     }
 }
 

@@ -94,7 +94,7 @@ impl<T: AsRef<[u8]>> Packet<T> {
         let header_len = self.header_len();
 
         if len < header_len {
-            Err(Error::Truncated)
+            Err(Error::WrongLengthForEthernetPacket)
         } else {
             Ok(())
         }
@@ -137,11 +137,13 @@ impl<T: AsRef<[u8]>> Packet<T> {
         self.buffer.as_ref().len() - len
     }
 
+    #[inline]
     pub fn dest_addr(&self) -> Address {
         let inner = self.buffer.as_ref();
         (&inner[field::DESTINATION]).into()
     }
 
+    #[inline]
     pub fn src_addr(&self) -> Address {
         let inner = self.buffer.as_ref();
         (&inner[field::SOURCE]).into()
@@ -180,16 +182,19 @@ impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
         NetworkEndian::write_u16(&mut data[field::ETHERTYPE], protocol.into())
     }
 
+    #[inline]
     pub fn set_dest_addr(&mut self, addr: Address) {
         let data = self.buffer.as_mut();
         data[field::DESTINATION].copy_from_slice(addr.as_bytes());
     }
 
+    #[inline]
     pub fn set_src_addr(&mut self, addr: Address) {
         let data = self.buffer.as_mut();
         data[field::SOURCE].copy_from_slice(addr.as_bytes());
     }
 
+    #[inline]
     pub fn payload_mut(&mut self) -> &mut [u8] {
         let protocol = self.protocol();
 
