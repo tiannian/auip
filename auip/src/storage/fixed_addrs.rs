@@ -1,10 +1,10 @@
-use auip_pkt::{ip, mac};
+use auip_pkt::{layer2, layer3};
 
 use crate::{AddrsStorage, Error, Result};
 
 pub struct FixedAddrsStorage<const IP_ADDR_NUM: usize> {
-    pub mac_addr: mac::Address,
-    pub ip_addrs: [ip::Cidr; IP_ADDR_NUM],
+    pub mac_addr: layer2::Address,
+    pub ip_addrs: [layer3::Cidr; IP_ADDR_NUM],
 }
 
 impl<const IP_ADDR_NUM: usize> Default for FixedAddrsStorage<IP_ADDR_NUM> {
@@ -19,19 +19,19 @@ impl<const IP_ADDR_NUM: usize> Default for FixedAddrsStorage<IP_ADDR_NUM> {
 }
 
 impl<const IP_ADDR_NUM: usize> AddrsStorage for FixedAddrsStorage<IP_ADDR_NUM> {
-    fn mac_addr(&self) -> &mac::Address {
+    fn mac_addr(&self) -> &layer2::Address {
         &self.mac_addr
     }
 
-    fn set_mac_addr(&mut self, addr: mac::Address) {
+    fn set_mac_addr(&mut self, addr: layer2::Address) {
         self.mac_addr = addr;
     }
 
-    fn add_ip_addr(&mut self, addr: ip::Cidr) -> Result<()> {
+    fn add_ip_addr(&mut self, addr: layer3::Cidr) -> Result<()> {
         let mut setted = false;
 
         for it in &mut self.ip_addrs {
-            if it.address() == &ip::Address::Unspecified {
+            if it.address() == &layer3::Address::Unspecified {
                 *it = addr;
                 setted = true;
             }
@@ -44,7 +44,7 @@ impl<const IP_ADDR_NUM: usize> AddrsStorage for FixedAddrsStorage<IP_ADDR_NUM> {
         }
     }
 
-    fn del_ip_addr(&mut self, addr: ip::Cidr) {
+    fn del_ip_addr(&mut self, addr: layer3::Cidr) {
         for it in &mut self.ip_addrs {
             if it == &addr {
                 *it = Default::default()
@@ -52,7 +52,7 @@ impl<const IP_ADDR_NUM: usize> AddrsStorage for FixedAddrsStorage<IP_ADDR_NUM> {
         }
     }
 
-    fn ip_addrs(&self) -> &[ip::Cidr] {
+    fn ip_addrs(&self) -> &[layer3::Cidr] {
         &self.ip_addrs
     }
 }

@@ -4,7 +4,10 @@
 mod error;
 pub use error::*;
 
-pub mod ip;
-pub mod mac;
-pub mod prelude;
+pub mod layer2;
+pub mod layer3;
+
+mod prelude;
+pub use prelude::*;
+
 pub mod utils;

@@ -32,7 +32,7 @@ impl Cidr {
                 prefix_len: netmask.count_ones() as u8,
             })
         } else {
-            Err(Error::Illegal)
+            Err(Error::IllegalNetmask)
         }
     }
 

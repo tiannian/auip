@@ -1,5 +1,5 @@
 use super::{consts, HardwareAddress, Operation, ProtocolAddress};
-use crate::{error::*, ip::ipv4::Address, mac};
+use crate::{error::*, layer2, layer3::ipv4::Address};
 use byteorder::{ByteOrder, NetworkEndian};
 use core::fmt::{self, Display};
 
@@ -82,7 +82,7 @@ impl<T: AsRef<[u8]>> Packet<T> {
         if raw == consts::HARDWARE_ETHERNET {
             if self.hardware_len() == consts::HARDWARE_ETHERNET_LENGTH {
                 let raw_addr = self.source_hardware_addr();
-                let addr = mac::Address::from(raw_addr);
+                let addr = layer2::Address::from(raw_addr);
                 Ok(HardwareAddress::Ethernet(addr))
             } else {
                 Err(Error::WrongLengthForEthernetAddress)
@@ -100,7 +100,7 @@ impl<T: AsRef<[u8]>> Packet<T> {
         if raw == consts::HARDWARE_ETHERNET {
             if self.hardware_len() == consts::HARDWARE_ETHERNET_LENGTH {
                 let raw_addr = self.target_hardware_addr();
-                let addr = mac::Address::from(raw_addr);
+                let addr = layer2::Address::from(raw_addr);
                 Ok(HardwareAddress::Ethernet(addr))
             } else {
                 Err(Error::WrongLengthForEthernetAddress)
@@ -154,7 +154,7 @@ impl<T: AsRef<[u8]>> Packet<T> {
 
 impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
     /// Set source hardware address
-    pub fn set_source_map(
+    pub fn set_source_address(
         &mut self,
         hd_addr: HardwareAddress,
         pc_addr: ProtocolAddress,
@@ -175,7 +175,7 @@ impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
     }
 
     /// Set target hardware address
-    pub fn set_target_map(
+    pub fn set_target_address(
         &mut self,
         hd_addr: HardwareAddress,
         pc_addr: ProtocolAddress,

@@ -1,6 +1,6 @@
 use core::fmt::{self, Display, Formatter};
 
-use crate::{ip::Protocol, prelude::IntoInner, utils::checksum, Error, Result};
+use crate::{layer3::Protocol, prelude::IntoInner, utils::checksum, Error, Result};
 
 use super::Address;
 use byteorder::{ByteOrder, NetworkEndian};
@@ -22,7 +22,7 @@ impl<T: AsRef<[u8]>> Display for Packet<T> {
     }
 }
 
-mod field {
+pub(crate) mod field {
     use crate::utils::field::Field;
 
     pub const VER_IHL: usize = 0;

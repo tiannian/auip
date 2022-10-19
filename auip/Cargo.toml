@@ -10,3 +10,8 @@ edition = "2018"
 # byteorder = {version = "1", default-features = false}
 log = "0.4"
 auip-pkt = {path = "../pkt"}
+
+[features]
+default = ["alloc"]
+alloc = []
+

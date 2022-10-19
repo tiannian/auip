@@ -1,14 +1,13 @@
 /// Error's for packet.
 #[derive(Clone, Debug)]
 pub enum Error {
-    Illegal,
-    Malformed,
-    Unrecognized,
     WrongLengthForEthernetAddress,
     WrongLengthForIpv4Address,
     WrongLengthForArpPacket,
     WrongLengthForIpv4Packet,
     WrongLengthForEthernetPacket,
+    UnknownIpVersionNumber,
+    IllegalNetmask,
 }
 
 /// Result for packet.

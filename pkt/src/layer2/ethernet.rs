@@ -2,7 +2,7 @@
 
 use crate::{prelude::IntoInner, Error, Result};
 
-use super::{consts, Address, Protocol, VlanId};
+use super::{consts, Address, Layer3Protocol, Protocol, VlanId};
 use byteorder::{ByteOrder, NetworkEndian};
 use core::fmt::{self, Display};
 
@@ -112,25 +112,24 @@ impl<T: AsRef<[u8]>> Packet<T> {
 
             if ty == consts::IEEE802_1Q {
                 let vlanid1 = VlanId::from_bytes_unchecked(&data[field::qinq::PRI_CFI_VID]);
-                Protocol::QinQ(vlanid, vlanid1)
+
+                let layer3_raw = NetworkEndian::read_u16(&data[field::qinq::ETHERTYPE]);
+
+                Protocol::QinQ(vlanid, vlanid1, Layer3Protocol::from(layer3_raw))
             } else {
-                Protocol::IEEE8021Q(vlanid)
+                Protocol::IEEE8021Q(vlanid, Layer3Protocol::from(ty))
             }
         } else {
             Protocol::from(ty)
         }
     }
 
-    /*     pub fn upper_protocol(&self) -> Protocol { */
-    /*  */
-    /* } */
-
     pub fn header_len(&self) -> usize {
         let protocol = self.protocol();
 
         match protocol {
-            Protocol::IEEE8021Q(_) => field::ieee8021q::PAYLOAD.start,
-            Protocol::QinQ(_, _) => field::qinq::PAYLOAD.start,
+            Protocol::IEEE8021Q(_, _) => field::ieee8021q::PAYLOAD.start,
+            Protocol::QinQ(_, _, _) => field::qinq::PAYLOAD.start,
             _ => field::ethernetii::PAYLOAD.start,
         }
     }
@@ -158,9 +157,11 @@ impl<T: AsRef<[u8]>> Packet<T> {
 
         let protocol = self.protocol();
 
+        // TODO: Use direct logic
+
         match protocol {
-            Protocol::IEEE8021Q(_) => &inner[field::ieee8021q::PAYLOAD],
-            Protocol::QinQ(_, _) => &inner[field::qinq::PAYLOAD],
+            Protocol::IEEE8021Q(_, _) => &inner[field::ieee8021q::PAYLOAD],
+            Protocol::QinQ(_, _, _) => &inner[field::qinq::PAYLOAD],
             _ => &inner[field::ethernetii::PAYLOAD],
         }
     }
@@ -172,13 +173,18 @@ impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
         let data = self.buffer.as_mut();
 
         match &protocol {
-            Protocol::IEEE8021Q(vlanid) => {
-                NetworkEndian::write_u16(&mut data[field::ieee8021q::PRI_CFI_VID], vlanid.0)
-            }
-            Protocol::QinQ(vlanid, vlanid1) => {
+            Protocol::IEEE8021Q(vlanid, l3) => {
                 NetworkEndian::write_u16(&mut data[field::ieee8021q::PRI_CFI_VID], vlanid.0);
-                NetworkEndian::write_u16(&mut data[field::qinq::ETHERTYPE], (&protocol).into());
+                NetworkEndian::write_u16(&mut data[field::ieee8021q::ETHERTYPE], l3.into());
+            }
+            Protocol::QinQ(vlanid, vlanid1, l3) => {
+                NetworkEndian::write_u16(&mut data[field::ieee8021q::PRI_CFI_VID], vlanid.0);
+                NetworkEndian::write_u16(
+                    &mut data[field::ieee8021q::ETHERTYPE],
+                    (&protocol).into(),
+                );
                 NetworkEndian::write_u16(&mut data[field::qinq::PRI_CFI_VID], vlanid1.0);
+                NetworkEndian::write_u16(&mut data[field::qinq::ETHERTYPE], l3.into());
             }
             _ => {}
         }
@@ -205,8 +211,8 @@ impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
         let inner = self.buffer.as_mut();
 
         match protocol {
-            Protocol::IEEE8021Q(_) => &mut inner[field::ieee8021q::PAYLOAD],
-            Protocol::QinQ(_, _) => &mut inner[field::qinq::PAYLOAD],
+            Protocol::IEEE8021Q(_, _) => &mut inner[field::ieee8021q::PAYLOAD],
+            Protocol::QinQ(_, _, _) => &mut inner[field::qinq::PAYLOAD],
             _ => &mut inner[field::ethernetii::PAYLOAD],
         }
     }

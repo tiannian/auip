@@ -1,4 +1,4 @@
-use crate::{ip::ipv4::Address, mac};
+use crate::{layer2, layer3::ipv4::Address};
 
 pub mod consts {
     pub const HARDWARE_ETHERNET: u16 = 1;
@@ -15,7 +15,7 @@ pub mod consts {
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum HardwareAddress {
-    Ethernet(mac::Address),
+    Ethernet(layer2::Address),
     Unknown(u16),
 }
 
