@@ -28,4 +28,6 @@ pub trait Layer3PacketStorage {
     fn get(&self, idx: usize) -> Option<&layer3::Packet<Self::Layer3PacketBytes>>;
 
     fn get_mut(&mut self, idx: usize) -> Option<&mut layer3::Packet<Self::Layer3PacketBytes>>;
+
+    fn length(&self) -> usize;
 }

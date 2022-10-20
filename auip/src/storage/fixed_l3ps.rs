@@ -26,4 +26,8 @@ impl<const MTU: usize, const LEN: usize> Layer3PacketStorage
             None
         }
     }
+
+    fn length(&self) -> usize {
+        LEN
+    }
 }

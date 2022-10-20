@@ -1,18 +1,26 @@
+use core::mem;
+
 use auip_pkt::{
     layer2::{self, ethernet, VlanId},
     layer3,
 };
 
-use crate::{AddrsStorage, Device, Layer3PacketStorage, Medium, Result};
+use crate::{AddrsStorage, Device, Layer3PacketStorage, Medium, Result, RingCurser};
 
 pub struct Interface<D, AS, L3PS> {
     device: D,
-    addrs_storage: AS,
-    layer3_packet_storage: L3PS,
     medium: Medium,
 
+    // Vland ID
     vlanid0: Option<VlanId>,
     vlanid1: Option<VlanId>,
+
+    // Address storage
+    addrs_storage: AS,
+
+    // layer3 packet
+    layer3_packet_storage: L3PS,
+    l3ps_ring_curser: RingCurser,
 }
 
 impl<D, AS, L3PS> Interface<D, AS, L3PS>
@@ -24,6 +32,8 @@ where
     pub fn new(device: D, addrs_storage: AS, layer3_packet_storage: L3PS) -> Self {
         let medium = device.medium();
 
+        let l3ps_ring_curser = RingCurser::new(layer3_packet_storage.length());
+
         Self {
             device,
             medium,
@@ -31,14 +41,13 @@ where
             layer3_packet_storage,
             vlanid0: None,
             vlanid1: None,
+            l3ps_ring_curser,
         }
     }
 
     pub(crate) fn poll_ethernet(&mut self) -> Result<()> {
         if let Some(rx_bytes) = self.device.recv()? {
             let rx_pkt = ethernet::Packet::new_checked(rx_bytes)?;
-
-            // TODO: Hook
 
             let dest_addr = rx_pkt.dest_addr();
 
@@ -85,7 +94,23 @@ where
         Ok(())
     }
 
+    pub(crate) fn poll_send(&mut self) -> Result<()> {
+        if !self.l3ps_ring_curser.is_empty() {
+            while let Some(idx) = self.l3ps_ring_curser.pop() {
+                if let Some(pkt) = self.layer3_packet_storage.get_mut(idx) {
+                    let _pkt = mem::replace(pkt, layer3::Packet::Unspecified);
+
+                    // send pkt here
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     pub fn poll(&mut self) -> Result<()> {
+        self.poll_send()?;
+        
         match self.medium {
             Medium::Ethernet => self.poll_ethernet()?,
             Medium::Ip => self.poll_ip()?,

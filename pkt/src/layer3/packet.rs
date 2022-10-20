@@ -24,4 +24,5 @@ pub enum Packet<T> {
     Arp(arp::Packet<T>),
     IPv4(ipv4::Packet<T>),
     Ipv6,
+    Unspecified,
 }
