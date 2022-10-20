@@ -4,6 +4,8 @@ use core::fmt::Debug;
 pub enum Error {
     NoSpaceForAddrsStorage,
 
+    UnexpectedType,
+
     PacketError(auip_pkt::Error),
 }
 

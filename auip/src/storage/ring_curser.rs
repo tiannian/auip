@@ -117,4 +117,3 @@ mod tests {
         println!("b: {}, e: {}, pos: {:?}", rc.begin, rc.end, r);
     }
 }
-

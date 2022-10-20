@@ -19,6 +19,15 @@ pub enum HardwareAddress {
     Unknown(u16),
 }
 
+impl HardwareAddress {
+    pub fn mac_addr(self) -> Option<layer2::Address> {
+        match self {
+            HardwareAddress::Ethernet(v) => Some(v),
+            HardwareAddress::Unknown(_) => None,
+        }
+    }
+}
+
 impl From<u16> for HardwareAddress {
     fn from(v: u16) -> Self {
         Self::Unknown(v)
@@ -76,6 +85,15 @@ pub enum ProtocolAddress {
     IPv4(Address),
 
     Unknown(u16),
+}
+
+impl ProtocolAddress {
+    pub fn ipv4_addr(self) -> Option<Address> {
+        match self {
+            ProtocolAddress::IPv4(v) => Some(v),
+            ProtocolAddress::Unknown(_) => None,
+        }
+    }
 }
 
 impl From<u16> for ProtocolAddress {
