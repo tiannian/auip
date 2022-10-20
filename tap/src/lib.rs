@@ -1,18 +1,15 @@
 #![allow(incomplete_features)]
 #![feature(generic_associated_types)]
 mod error;
+use auip::Device;
 pub use error::{Error, Result};
 
 mod tap;
 pub use tap::open_tap_device;
 
-use auip::phy::DeviceCapabilities;
-use auip_pkt::mac;
 use tokio::fs::File;
-use tokio::io::AsyncReadExt;
 
 pub struct TapDevice {
-    // tx_buffer: [u8; 1536],
     rx_buffer: [u8; 1536],
     fs: File,
 }
@@ -23,6 +20,20 @@ impl TapDevice {
             rx_buffer: [0u8; 1536],
             fs,
         }
+    }
+}
+
+impl Device for TapDevice {
+    fn medium(&self) -> auip::Medium {
+        auip::Medium::Ethernet
+    }
+
+    fn recv(&mut self) -> auip::Result<Option<&[u8]>> {
+        Ok(None)
+    }
+
+    fn send(&mut self, buffer: &[u8]) -> auip::Result<()> {
+        Ok(())
     }
 }
 

@@ -12,7 +12,5 @@ tokio = { version = "1", features = ["rt", "fs", "macros", "rt-multi-thread", "i
 hex = "0.4"
 env_logger = "0.8"
 auip = {path = "../auip"}
-auip-pkt = {path = "../auip-pkt"}
-
-# [dev-dependencies]
+auip-pkt = {path = "../pkt"}
 

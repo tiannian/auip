@@ -3,5 +3,6 @@ members = [
     'pkt',
 
     'auip',
-    # 'auip-tap',
+
+    'tap',
 ]
