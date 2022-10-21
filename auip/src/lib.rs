@@ -13,7 +13,7 @@ mod device;
 pub use device::*;
 
 pub mod interface;
-pub use interface::Interface;
+pub use interface::{Interface, Vlan};
 
 pub mod storage;
 
