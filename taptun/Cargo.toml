@@ -8,7 +8,6 @@ edition = "2018"
 
 [dependencies]
 libc = "0.2"
-tokio = { version = "1", features = ["rt", "fs", "macros", "rt-multi-thread", "io-util", "process"]}
 hex = "0.4"
 env_logger = "0.8"
 auip = {path = "../auip"}
