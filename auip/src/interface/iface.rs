@@ -46,6 +46,22 @@ where
         &mut self.device
     }
 
+    pub fn addrs_storage(&self) -> &AS {
+        &self.addrs_storage
+    }
+
+    pub fn addrs_storage_mut(&mut self) -> &mut AS {
+        &mut self.addrs_storage
+    }
+
+    pub fn arp_storage(&self) -> &ARPS {
+        &self.arp_storage
+    }
+
+    pub fn arp_storage_mut(&mut self) -> &mut ARPS {
+        &mut self.arp_storage
+    }
+
     pub(crate) fn poll_ethernet(&mut self) -> Result<()> {
         let device = &mut self.device;
 
@@ -101,6 +117,8 @@ where
                     let pkt = layer3::arp::Packet::new_checked(rx_pkt.payload())?;
 
                     {
+                        log::debug!("Receive arp packet: {}", pkt);
+
                         let mac_addr = pkt
                             .source_hardware_address()?
                             .mac_addr()

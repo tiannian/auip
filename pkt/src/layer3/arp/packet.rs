@@ -114,7 +114,7 @@ impl<T: AsRef<[u8]>> Packet<T> {
     pub fn source_protocol_address(&self) -> Result<ProtocolAddress> {
         let data = self.buffer.as_ref();
         let raw = NetworkEndian::read_u16(&data[field::PTYPE]);
-        if raw == consts::HARDWARE_ETHERNET {
+        if raw == consts::PROTOCOL_IPV4 {
             if self.hardware_len() == consts::HARDWARE_ETHERNET_LENGTH {
                 let raw_addr = self.source_protocol_addr();
                 let addr = Address::from(raw_addr);
@@ -131,7 +131,7 @@ impl<T: AsRef<[u8]>> Packet<T> {
     pub fn target_protocol_address(&self) -> Result<ProtocolAddress> {
         let data = self.buffer.as_ref();
         let raw = NetworkEndian::read_u16(&data[field::PTYPE]);
-        if raw == consts::HARDWARE_ETHERNET {
+        if raw == consts::PROTOCOL_IPV4 {
             if self.hardware_len() == consts::HARDWARE_ETHERNET_LENGTH {
                 let raw_addr = self.target_protocol_addr();
                 let addr = Address::from(raw_addr);
