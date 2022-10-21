@@ -4,14 +4,23 @@ use auip_pkt::{
     layer3::{self, Cidr},
 };
 
-use crate::{AddrsStorage, Result, Error};
+use crate::{AddrsStorage, Error, Result};
 
-pub struct DynamicAddrsStorage {
+pub struct Addrs {
     pub mac_addr: layer2::Address,
     pub ip_addrs: Vec<Cidr>,
 }
 
-impl AddrsStorage for DynamicAddrsStorage {
+impl Default for Addrs {
+    fn default() -> Self {
+        Self {
+            mac_addr: Default::default(),
+            ip_addrs: Vec::new(),
+        }
+    }
+}
+
+impl AddrsStorage for Addrs {
     fn mac_addr(&self) -> &layer2::Address {
         &self.mac_addr
     }

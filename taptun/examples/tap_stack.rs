@@ -1,4 +1,4 @@
-use auip::Interface;
+use auip::{Interface, dynamic::{Addrs, Arp}};
 use auip_tap::{open_tap_device, TapTunDevice};
 use std::process::Command;
 
@@ -25,5 +25,14 @@ fn main() {
     let file = open_tap_device("tap0").unwrap();
     let device = TapTunDevice::new(file);
 
-    // let iface = Interface::new(device, addrs_storage, arp_storage)
+    let addrs_storage = Addrs::default();
+    let arp_storage = Arp::default();
+    let mut iface = Interface::new(device, addrs_storage, arp_storage);
+
+    loop {
+        iface.device_mut().poll_read();
+        if let Err(e) = iface.poll() {
+            log::error!("{:?}", e);
+        }
+    }
 }

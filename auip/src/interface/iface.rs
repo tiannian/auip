@@ -38,6 +38,14 @@ where
         }
     }
 
+    pub fn device(&self) -> &D {
+        &self.device
+    }
+
+    pub fn device_mut(&mut self) -> &mut D {
+        &mut self.device
+    }
+
     pub(crate) fn poll_ethernet(&mut self) -> Result<()> {
         let device = &mut self.device;
 

@@ -8,8 +8,10 @@ edition = "2018"
 
 [dependencies]
 libc = "0.2"
-hex = "0.4"
+
+log = "0.4"
 env_logger = "0.8"
-auip = {path = "../auip"}
-auip-pkt = {path = "../pkt"}
+
+auip = { path = "../auip" }
+auip-pkt = { path = "../pkt" }
 

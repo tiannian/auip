@@ -2,12 +2,12 @@ use auip_pkt::{layer2, layer3};
 
 use crate::{AddrsStorage, Error, Result};
 
-pub struct FixedAddrsStorage<const IP_ADDR_NUM: usize> {
+pub struct Addrs<const IP_ADDR_NUM: usize> {
     pub mac_addr: layer2::Address,
     pub ip_addrs: [layer3::Cidr; IP_ADDR_NUM],
 }
 
-impl<const IP_ADDR_NUM: usize> Default for FixedAddrsStorage<IP_ADDR_NUM> {
+impl<const IP_ADDR_NUM: usize> Default for Addrs<IP_ADDR_NUM> {
     fn default() -> Self {
         let ip_addrs = [Default::default(); IP_ADDR_NUM];
 
@@ -18,7 +18,7 @@ impl<const IP_ADDR_NUM: usize> Default for FixedAddrsStorage<IP_ADDR_NUM> {
     }
 }
 
-impl<const IP_ADDR_NUM: usize> AddrsStorage for FixedAddrsStorage<IP_ADDR_NUM> {
+impl<const IP_ADDR_NUM: usize> AddrsStorage for Addrs<IP_ADDR_NUM> {
     fn mac_addr(&self) -> &layer2::Address {
         &self.mac_addr
     }

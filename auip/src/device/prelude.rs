@@ -33,7 +33,7 @@ pub trait AddrsStorage {
 pub trait ArpStorage {
     fn set_map(&mut self, mac: layer2::Address, ip_addr: layer3::ipv4::Address) -> Result<()>;
 
-    fn mac_addr(&self, ip_addr: layer3::ipv4::Address) -> Result<layer2::Address>;
+    fn mac_addr(&self, ip_addr: &layer3::ipv4::Address) -> Result<Option<layer2::Address>>;
 }
 
 /* pub trait Layer3PacketStorage { */
