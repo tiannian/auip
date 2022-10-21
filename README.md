@@ -36,8 +36,8 @@ Network support these packet and function:
 ## Architecture
 
 - [X] Device
-- [ ] Interface
-- [ ] Storage
+- [X] Interface
+- [X] Storage
 - [ ] Hook
 - [ ] Socket
 
@@ -59,6 +59,15 @@ pub trait Device {
     fn medium(&self) -> Medium;
 }
 ```
+
+Currently support these device:
+
+- [X] Tap (Linux, MacOS)
+- [X] Tun (Linux, MacOS)
+- [ ] RawSocket (Windows)
+- [ ] Bridge
+- [ ] Loopback
+- [ ] Sub-port (For macvtap, vlan)
 
 ### Interface
 
