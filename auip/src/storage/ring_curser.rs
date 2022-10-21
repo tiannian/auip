@@ -63,7 +63,7 @@ impl RingCurser {
 mod tests {
     use std::println;
 
-    use crate::RingCurser;
+    use crate::storage::RingCurser;
 
     #[test]
     fn test_ring_curser4() {

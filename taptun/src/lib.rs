@@ -36,11 +36,11 @@ impl Device for TapTunDevice {
         auip::Medium::Ethernet
     }
 
-    fn recv(&mut self) -> auip::Result<Option<&[u8]>> {
+    fn recv(&mut self) -> auip::Result<Option<&mut [u8]>> {
         if self.len == 0 {
             Ok(None)
         } else {
-            Ok(Some(&self.rx_buffer[..self.len]))
+            Ok(Some(&mut self.rx_buffer[..self.len]))
         }
     }
 

@@ -20,7 +20,7 @@ pub enum HardwareAddress {
 }
 
 impl HardwareAddress {
-    pub fn mac_addr(self) -> Option<layer2::Address> {
+    pub fn mac_addr(&self) -> Option<&layer2::Address> {
         match self {
             HardwareAddress::Ethernet(v) => Some(v),
             HardwareAddress::Unknown(_) => None,
@@ -88,7 +88,7 @@ pub enum ProtocolAddress {
 }
 
 impl ProtocolAddress {
-    pub fn ipv4_addr(self) -> Option<Address> {
+    pub fn ipv4_addr(&self) -> Option<&Address> {
         match self {
             ProtocolAddress::IPv4(v) => Some(v),
             ProtocolAddress::Unknown(_) => None,

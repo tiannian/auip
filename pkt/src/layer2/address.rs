@@ -4,6 +4,8 @@ use core::ops::Deref;
 
 use byteorder::{ByteOrder, NetworkEndian};
 
+use crate::{Error, Result};
+
 #[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Default)]
 pub struct Address(pub [u8; 6]);
 
@@ -46,6 +48,22 @@ impl Address {
 
     pub fn new(a: u8, b: u8, c: u8, d: u8, e: u8, f: u8) -> Self {
         Self([a, b, c, d, e, f])
+    }
+
+    pub fn parse(s: &str) -> Result<Self> {
+        let mut segments = s.split(":");
+
+        let mut inner = [0u8; 6];
+
+        for i in inner.iter_mut() {
+            if let Some(seg) = segments.next() {
+                *i = u8::from_str_radix(seg, 16)?;
+            } else {
+                return Err(Error::ParseMacAddressFailed);
+            }
+        }
+
+        Ok(Self(inner))
     }
 
     pub fn from_bytes(v: &[u8]) -> Self {

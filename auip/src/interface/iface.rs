@@ -3,7 +3,9 @@ use auip_pkt::{
     layer3,
 };
 
-use crate::{interface::utils, AddrsStorage, ArpStorage, Device, Error, Medium, Result};
+use crate::{interface::utils, AddrsStorage, ArpStorage, Device, Medium, Result};
+
+use super::action::Action;
 
 pub struct Interface<D, AS, ARPS> {
     device: D,
@@ -62,25 +64,28 @@ where
         &mut self.arp_storage
     }
 
-    pub(crate) fn poll_ethernet(&mut self) -> Result<()> {
+    pub(crate) fn poll_ethernet(&mut self) -> Result<Action> {
         let device = &mut self.device;
 
-        let this_mac_addrs = *self.addrs_storage.mac_addr();
+        let this_mac_addr = *self.addrs_storage.mac_addr();
 
         let arp_storage = &mut self.arp_storage;
 
         let addrs_storage = &mut self.addrs_storage;
 
         if let Some(rx_bytes) = device.recv()? {
-            let rx_pkt = ethernet::Packet::new_checked(rx_bytes)?;
+            let mut rx_pkt = ethernet::Packet::new_checked(rx_bytes)?;
 
             log::debug!("Receive ethernet packet: {}", rx_pkt);
 
             let dest_addr = rx_pkt.dest_addr();
 
-            if dest_addr != this_mac_addrs {
+            if dest_addr != this_mac_addr && dest_addr != layer2::Address::BROADCAST {
                 log::debug!("Mac address mismatch, Drop it.");
+
+                return Ok(Action::NoAction);
             }
+
             let protocol = rx_pkt.protocol();
 
             let l3 = match protocol {
@@ -90,7 +95,7 @@ where
                         l3
                     } else {
                         log::debug!("VlanId mismatch, Drop it.");
-                        return Ok(());
+                        return Ok(Action::NoAction);
                     }
                 }
                 layer2::Protocol::QinQ(vlanid, vlanid1, l3) => {
@@ -98,56 +103,43 @@ where
                         l3
                     } else {
                         log::debug!("VlanId mismatch, Drop it.");
-                        return Ok(());
+                        return Ok(Action::NoAction);
                     }
                 }
 
                 // TODO: process IEEE802.3 packet.
-                layer2::Protocol::Length(_) => return Ok(()),
+                layer2::Protocol::Length(_) => return Ok(Action::NoAction),
 
                 // Skip
                 layer2::Protocol::Unknown(ty) => {
                     log::debug!("Unsupport protocol type: {}, Drop it.", ty);
-                    return Ok(());
+                    return Ok(Action::NoAction);
                 }
             };
 
             match l3 {
                 layer2::Layer3Protocol::ARP => {
-                    let pkt = layer3::arp::Packet::new_checked(rx_pkt.payload())?;
+                    let pkt = layer3::arp::Packet::new_checked(rx_pkt.payload_mut())?;
 
-                    {
-                        log::debug!("Receive arp packet: {}", pkt);
+                    log::debug!("Receive arp packet: {}", pkt);
 
-                        let mac_addr = pkt
-                            .source_hardware_address()?
-                            .mac_addr()
-                            .ok_or(Error::UnexpectedType)?;
-                        let ip_addr = pkt
-                            .source_protocol_address()?
-                            .ipv4_addr()
-                            .ok_or(Error::UnexpectedType)?;
+                    let sha = pkt.source_hardware_address()?;
+                    let spa = pkt.source_protocol_address()?;
+                    let tpa = pkt.target_protocol_address()?;
+                    let sa = rx_pkt.src_addr();
 
-                        log::debug!("add arp map {} -> {}", &mac_addr, &ip_addr);
-
-                        arp_storage.set_map(mac_addr, ip_addr)?;
-                    }
-
-                    let addr = pkt
-                        .target_protocol_address()?
-                        .ipv4_addr()
-                        .ok_or(Error::UnexpectedType)?;
-
-                    let ip_addr = layer3::Address::Ipv4(addr);
-
-                    if addrs_storage.has_ip_addr(&ip_addr) {
-                        let _rpkt = utils::poll_arp(pkt, arp_storage)?;
-                    } else {
-                        log::debug!("Ip address mismatch, Drop it.");
-                    }
+                    return utils::build_and_record_arp(
+                        sa,
+                        sha,
+                        spa,
+                        this_mac_addr,
+                        tpa,
+                        addrs_storage,
+                        arp_storage,
+                    );
                 }
                 layer2::Layer3Protocol::IPv4 => {
-                    let pkt = layer3::ipv4::Packet::new_checked(rx_pkt.payload())?;
+                    let pkt = layer3::ipv4::Packet::new_checked(rx_pkt.payload_mut())?;
 
                     utils::poll_ipv4(pkt)?;
                 }
@@ -156,7 +148,7 @@ where
             }
         }
 
-        Ok(())
+        Ok(Action::NoAction)
     }
 
     pub(crate) fn poll_ip(&mut self) -> Result<()> {
@@ -174,7 +166,10 @@ where
 
     pub fn poll(&mut self) -> Result<()> {
         match self.medium {
-            Medium::Ethernet => self.poll_ethernet()?,
+            Medium::Ethernet => match self.poll_ethernet()? {
+                Action::NoAction => {}
+                Action::SendArp(bytes) => self.device.send(&bytes)?,
+            },
             Medium::Ip => self.poll_ip()?,
         }
 

@@ -5,7 +5,7 @@ use crate::{Medium, Result};
 pub trait Device {
     fn send(&mut self, buffer: &[u8]) -> Result<()>;
 
-    fn recv(&mut self) -> Result<Option<&[u8]>>;
+    fn recv(&mut self) -> Result<Option<&mut [u8]>>;
 
     fn medium(&self) -> Medium;
 }
@@ -35,13 +35,3 @@ pub trait ArpStorage {
 
     fn mac_addr(&self, ip_addr: &layer3::ipv4::Address) -> Result<Option<layer2::Address>>;
 }
-
-/* pub trait Layer3PacketStorage { */
-/* type Layer3PacketBytes; */
-/*  */
-/* fn get(&self, idx: usize) -> Option<&layer3::Packet<Self::Layer3PacketBytes>>; */
-/*  */
-/* fn get_mut(&mut self, idx: usize) -> Option<&mut layer3::Packet<Self::Layer3PacketBytes>>; */
-/*  */
-/* fn length(&self) -> usize; */
-/* } */

@@ -3,4 +3,4 @@ mod types;
 pub use types::*;
 
 mod packet;
-pub use packet::Packet;
+pub use packet::*;

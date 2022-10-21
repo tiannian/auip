@@ -12,8 +12,10 @@ pub struct Packet<T> {
     buffer: T,
 }
 
-mod field {
+pub mod field {
     use crate::utils::field::Field;
+
+    pub const MAX_HEADER_LEN: usize = 22;
 
     pub const DESTINATION: Field = 0..6;
     pub const SOURCE: Field = 6..12;

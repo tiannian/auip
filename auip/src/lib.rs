@@ -12,11 +12,9 @@ pub use error::*;
 mod device;
 pub use device::*;
 
-mod interface;
-pub use interface::*;
+pub mod interface;
+pub use interface::Interface;
 
-mod storage;
-pub use storage::*;
+pub mod storage;
 
-mod utils;
-pub use utils::*;
+pub mod utils;

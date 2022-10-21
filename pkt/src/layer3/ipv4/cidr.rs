@@ -23,6 +23,21 @@ impl Cidr {
         }
     }
 
+    pub fn parse(s: &str) -> Result<Self> {
+        let mut segments = s.split("/");
+
+        let addr = segments.next().ok_or(Error::ParseIpv4CidrFailed)?;
+        let mk = segments.next().ok_or(Error::ParseIpv4CidrFailed)?;
+
+        let address = Address::parse(addr)?;
+        let prefix_len = u8::from_str_radix(mk, 10)?;
+
+        Ok(Self {
+            address,
+            prefix_len,
+        })
+    }
+
     /// Create an IPv4 CIDR block from the given address and network mask.
     pub fn from_netmask(addr: Address, netmask: Address) -> Result<Cidr> {
         let netmask = NetworkEndian::read_u32(&netmask.0[..]);

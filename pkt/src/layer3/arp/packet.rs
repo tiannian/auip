@@ -22,7 +22,7 @@ impl<T: AsRef<[u8]>> Display for Packet<T> {
     }
 }
 
-mod field {
+pub mod field {
     use crate::utils::field::Field;
 
     pub const HTYPE: Field = 0..2;
@@ -30,6 +30,8 @@ mod field {
     pub const HLEN: usize = 4;
     pub const PLEN: usize = 5;
     pub const OPER: Field = 6..8;
+
+    pub const PACKET_LEN: usize = 8 + 6 + 4 + 6 + 4;
 
     pub fn source_hardware_address(hardware_len: u8, _protocol_len: u8) -> Field {
         let start = OPER.end;
@@ -154,17 +156,17 @@ impl<T: AsRef<[u8]>> Packet<T> {
 
 impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
     /// Set source hardware address
-    pub fn set_source_address(
-        &mut self,
-        hd_addr: HardwareAddress,
-        pc_addr: ProtocolAddress,
-    ) -> Result<()> {
+    pub fn set_source_hardware_address(&mut self, hd_addr: HardwareAddress) -> Result<()> {
         self.set_hardware(&hd_addr);
         if let HardwareAddress::Ethernet(addr) = hd_addr {
             self.set_hardware_len(consts::HARDWARE_ETHERNET_LENGTH);
             self.set_source_hardware_addr(addr.as_ref());
         }
 
+        Ok(())
+    }
+
+    pub fn set_source_protocol_address(&mut self, pc_addr: ProtocolAddress) -> Result<()> {
         self.set_protocol(&pc_addr);
         if let ProtocolAddress::IPv4(addr) = pc_addr {
             self.set_protocol_len(consts::PROTOCOL_IPV4_LENGTH);
@@ -174,18 +176,18 @@ impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
         Ok(())
     }
 
-    /// Set target hardware address
-    pub fn set_target_address(
-        &mut self,
-        hd_addr: HardwareAddress,
-        pc_addr: ProtocolAddress,
-    ) -> Result<()> {
+    pub fn set_target_hardware_address(&mut self, hd_addr: HardwareAddress) -> Result<()> {
         self.set_hardware(&hd_addr);
         if let HardwareAddress::Ethernet(addr) = hd_addr {
             self.set_hardware_len(consts::HARDWARE_ETHERNET_LENGTH);
             self.set_target_hardware_addr(addr.as_ref());
         }
 
+        Ok(())
+    }
+
+    /// Set target hardware address
+    pub fn set_target_protocol_address(&mut self, pc_addr: ProtocolAddress) -> Result<()> {
         self.set_protocol(&pc_addr);
         if let ProtocolAddress::IPv4(addr) = pc_addr {
             self.set_protocol_len(consts::PROTOCOL_IPV4_LENGTH);

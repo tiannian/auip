@@ -8,6 +8,16 @@ pub enum Error {
     WrongLengthForEthernetPacket,
     UnknownIpVersionNumber,
     IllegalNetmask,
+    ParseMacAddressFailed,
+    ParseIpv4CidrFailed,
+    ParseIpv4AddressFailed,
+    ParseIntError(core::num::ParseIntError),
+}
+
+impl From<core::num::ParseIntError> for Error {
+    fn from(e: core::num::ParseIntError) -> Self {
+        Self::ParseIntError(e)
+    }
 }
 
 /// Result for packet.
