@@ -3,6 +3,9 @@
 #[cfg(test)]
 extern crate std;
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
 mod error;
 pub use error::*;
 

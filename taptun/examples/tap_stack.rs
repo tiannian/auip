@@ -1,14 +1,9 @@
-// use tokio::fs::File;
-// use auip::phy::Device;
-// use auip_pkt::prelude::*;
-use auip_tap::open_tap_device;
-use auip_tap::TapDevice;
-use tokio::process::Command;
+use auip::Interface;
+use auip_tap::{open_tap_device, TapTunDevice};
+use std::process::Command;
 
-#[tokio::main]
-async fn main() {
+fn main() {
     env_logger::init();
-    let file = open_tap_device("tap0").await.unwrap();
     let mut command = Command::new("ip")
         .arg("addr")
         .arg("add")
@@ -17,7 +12,7 @@ async fn main() {
         .arg("tap0")
         .spawn()
         .unwrap();
-    let _ = command.wait().await.unwrap();
+    let _ = command.wait().unwrap();
     let mut command = Command::new("ip")
         .arg("link")
         .arg("set")
@@ -25,12 +20,10 @@ async fn main() {
         .arg("up")
         .spawn()
         .unwrap();
-    let _ = command.wait().await.unwrap();
-    // let mut device = Device::new(TapDevice::new(file));
-    // let mut device = ;
-    // let _layer2_pkt = device.receive().await.unwrap();
-    // println!("{:?}", _layer2_pkt);
-    // let layer2_payload = layer2_pkt.payload().unwrap();
-    // let layer3_pkt = auip_pkt::ip::arp::Packet::new_checked(layer2_payload).unwrap();
-    // println!("{}", layer3_pkt);
+    let _ = command.wait().unwrap();
+
+    let file = open_tap_device("tap0").unwrap();
+    let device = TapTunDevice::new(file);
+
+    // let iface = Interface::new(device, addrs_storage, arp_storage)
 }

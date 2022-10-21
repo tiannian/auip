@@ -17,20 +17,16 @@ pub trait AddrsStorage {
 
     fn add_ip_addr(&mut self, addr: layer3::Cidr) -> Result<()>;
 
-    fn del_ip_addr(&mut self, addr: layer3::Cidr);
+    fn del_ip_addr(&mut self, addr: &layer3::Cidr) -> Result<()>;
 
     fn ip_addrs(&self) -> &[layer3::Cidr];
 
     fn has_ip_addr(&self, ip_addr: &layer3::Address) -> bool {
         let addrs = self.ip_addrs();
 
-        for cidr in addrs {
-            if cidr.contains_addr(ip_addr) {
-                return true;
-            }
-        }
-
-        false
+        addrs
+            .binary_search_by_key(ip_addr, |a| *a.address())
+            .is_ok()
     }
 }
 

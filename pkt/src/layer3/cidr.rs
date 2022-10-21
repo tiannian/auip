@@ -1,7 +1,7 @@
 use super::ipv4;
 use super::Address;
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Default)]
 pub struct Cidr {
     address: Address,
     prefix_len: u8,

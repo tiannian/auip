@@ -1,6 +1,6 @@
 use crate::{Error, Result};
-use std::os::unix::io::AsRawFd;
 use std::fs::{File, OpenOptions};
+use std::os::unix::io::AsRawFd;
 
 const TUNSETIFF: libc::c_ulong = 0x400454CA;
 const IFF_TAP: libc::c_int = 0x0002;
@@ -29,7 +29,7 @@ fn ifreq_ioctl(fd: libc::c_int, cmd: libc::c_ulong, ifreq: &mut Ifreq) -> libc::
     unsafe { libc::ioctl(fd, cmd as _, ifreq as *mut Ifreq) }
 }
 
-pub async fn open_tap_device(name: &str) -> Result<File> {
+pub fn open_tap_device(name: &str) -> Result<File> {
     let file = OpenOptions::new()
         .read(true)
         .write(true)

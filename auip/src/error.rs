@@ -6,6 +6,8 @@ pub enum Error {
 
     UnexpectedType,
 
+    IpAddrNotFound,
+
     PacketError(auip_pkt::Error),
 }
 

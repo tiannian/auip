@@ -1,5 +1,8 @@
 mod error;
-use std::{fs::File, io::{Write, Read}};
+use std::{
+    fs::File,
+    io::{Read, Write},
+};
 
 use auip::Device;
 pub use error::{Error, Result};
@@ -18,7 +21,7 @@ impl TapTunDevice {
         Self {
             rx_buffer: [0u8; 1536],
             len: 0,
-            file
+            file,
         }
     }
 
@@ -37,7 +40,7 @@ impl Device for TapTunDevice {
         if self.len == 0 {
             Ok(None)
         } else {
-            Ok(Some(&self.rx_buffer[.. self.len]))
+            Ok(Some(&self.rx_buffer[..self.len]))
         }
     }
 
@@ -46,4 +49,3 @@ impl Device for TapTunDevice {
         Ok(())
     }
 }
-

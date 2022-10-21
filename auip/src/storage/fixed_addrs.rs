@@ -28,27 +28,22 @@ impl<const IP_ADDR_NUM: usize> AddrsStorage for FixedAddrsStorage<IP_ADDR_NUM> {
     }
 
     fn add_ip_addr(&mut self, addr: layer3::Cidr) -> Result<()> {
-        let mut setted = false;
+        let empty = layer3::Cidr::default();
 
-        for it in &mut self.ip_addrs {
-            if it.address() == &layer3::Address::Unspecified {
-                *it = addr;
-                setted = true;
-            }
-        }
-
-        if setted {
+        if let Ok(pos) = self.ip_addrs.binary_search(&empty) {
+            self.ip_addrs[pos] = addr;
             Ok(())
         } else {
             Err(Error::NoSpaceForAddrsStorage)
         }
     }
 
-    fn del_ip_addr(&mut self, addr: layer3::Cidr) {
-        for it in &mut self.ip_addrs {
-            if it == &addr {
-                *it = Default::default()
-            }
+    fn del_ip_addr(&mut self, addr: &layer3::Cidr) -> Result<()> {
+        if let Ok(pos) = self.ip_addrs.binary_search(addr) {
+            self.ip_addrs[pos] = layer3::Cidr::default();
+            Ok(())
+        } else {
+            Err(Error::IpAddrNotFound)
         }
     }
 
