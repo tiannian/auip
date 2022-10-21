@@ -108,7 +108,10 @@ where
                 }
 
                 // TODO: process IEEE802.3 packet.
-                layer2::Protocol::Length(_) => return Ok(Action::NoAction),
+                layer2::Protocol::Length(_) => {
+                    log::debug!("Unsupport IEEE802.3. This format will support later, Drop it.");
+                    return Ok(Action::NoAction)
+                }
 
                 // Skip
                 layer2::Protocol::Unknown(ty) => {
