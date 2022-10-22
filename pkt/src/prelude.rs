@@ -1,3 +1,4 @@
+/// IntoInner
 pub trait IntoInner {
     type Inner;
 

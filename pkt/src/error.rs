@@ -6,11 +6,13 @@ pub enum Error {
     WrongLengthForArpPacket,
     WrongLengthForIpv4Packet,
     WrongLengthForEthernetPacket,
+    WrongLengthForBufferLength,
     UnknownIpVersionNumber,
     IllegalNetmask,
     ParseMacAddressFailed,
     ParseIpv4CidrFailed,
     ParseIpv4AddressFailed,
+    SrcAndDstMustSame,
     ParseIntError(core::num::ParseIntError),
 }
 
