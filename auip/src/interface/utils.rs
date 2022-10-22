@@ -53,6 +53,6 @@ pub fn build_and_record_arp(
     }
 }
 
-pub fn poll_ipv4(bytes: layer3::ipv4::Packet<&mut [u8]>) -> Result<()> {
+pub fn poll_ipv4(bytes: layer3::ipv4::Packet<&[u8]>) -> Result<()> {
     Ok(())
 }

@@ -7,8 +7,8 @@ use std::{
 use auip::Device;
 pub use error::{Error, Result};
 
-mod tap;
-pub use tap::open_tap_device;
+mod taptun;
+pub use taptun::open_device;
 
 pub struct TapTunDevice {
     pub rx_buffer: [u8; 1536],
@@ -17,12 +17,24 @@ pub struct TapTunDevice {
 }
 
 impl TapTunDevice {
-    pub fn new(file: File) -> Self {
-        Self {
+    pub fn new_tap(ifname: &str) -> Result<Self> {
+        let file = open_device(ifname, true)?;
+
+        Ok(Self {
             rx_buffer: [0u8; 1536],
             len: 0,
             file,
-        }
+        })
+    }
+
+    pub fn new_tun(ifname: &str) -> Result<Self> {
+        let file = open_device(ifname, false)?;
+
+        Ok(Self {
+            rx_buffer: [0u8; 1536],
+            len: 0,
+            file,
+        })
     }
 
     pub fn poll_read(&mut self) {
@@ -36,11 +48,11 @@ impl Device for TapTunDevice {
         auip::Medium::Ethernet
     }
 
-    fn recv(&mut self) -> auip::Result<Option<&mut [u8]>> {
+    fn recv(&mut self) -> auip::Result<Option<&[u8]>> {
         if self.len == 0 {
             Ok(None)
         } else {
-            Ok(Some(&mut self.rx_buffer[..self.len]))
+            Ok(Some(&self.rx_buffer[..self.len]))
         }
     }
 

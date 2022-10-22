@@ -1,3 +1,5 @@
+//! Interface module.
+
 mod iface;
 pub use iface::*;
 

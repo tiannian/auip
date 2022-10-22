@@ -1,3 +1,2 @@
-pub struct Vlan {
-
-}
+/// Config vlan for interface
+pub struct VlanConfig {}

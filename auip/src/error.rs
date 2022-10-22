@@ -1,5 +1,6 @@
 use core::fmt::Debug;
 
+/// Auip error
 #[derive(Debug)]
 pub enum Error {
     NoSpaceForAddrsStorage,
@@ -19,4 +20,5 @@ impl From<auip_pkt::Error> for Error {
     }
 }
 
+/// Result for auip
 pub type Result<T> = core::result::Result<T, Error>;

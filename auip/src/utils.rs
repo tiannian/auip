@@ -1,3 +1,5 @@
+//! Utils
+
 pub struct FixedBytes<const LEN: usize>(pub [u8; LEN]);
 
 impl<const LEN: usize> AsRef<[u8]> for FixedBytes<LEN> {

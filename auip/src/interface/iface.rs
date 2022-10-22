@@ -7,6 +7,7 @@ use crate::{interface::utils, AddrsStorage, ArpStorage, Device, Medium, Result};
 
 use super::action::Action;
 
+/// Network interface
 pub struct Interface<D, AS, ARPS> {
     device: D,
     medium: Medium,
@@ -74,7 +75,7 @@ where
         let addrs_storage = &mut self.addrs_storage;
 
         if let Some(rx_bytes) = device.recv()? {
-            let mut rx_pkt = ethernet::Packet::new_checked(rx_bytes)?;
+            let rx_pkt = ethernet::Packet::new_checked(rx_bytes)?;
 
             log::debug!("Receive ethernet packet: {}", rx_pkt);
 
@@ -110,7 +111,7 @@ where
                 // TODO: process IEEE802.3 packet.
                 layer2::Protocol::Length(_) => {
                     log::debug!("Unsupport IEEE802.3. This format will support later, Drop it.");
-                    return Ok(Action::NoAction)
+                    return Ok(Action::NoAction);
                 }
 
                 // Skip
@@ -122,7 +123,7 @@ where
 
             match l3 {
                 layer2::Layer3Protocol::ARP => {
-                    let pkt = layer3::arp::Packet::new_checked(rx_pkt.payload_mut())?;
+                    let pkt = layer3::arp::Packet::new_checked(rx_pkt.payload())?;
 
                     log::debug!("Receive arp packet: {}", pkt);
 
@@ -142,7 +143,7 @@ where
                     );
                 }
                 layer2::Layer3Protocol::IPv4 => {
-                    let pkt = layer3::ipv4::Packet::new_checked(rx_pkt.payload_mut())?;
+                    let pkt = layer3::ipv4::Packet::new_checked(rx_pkt.payload())?;
 
                     utils::poll_ipv4(pkt)?;
                 }

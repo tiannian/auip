@@ -1,9 +1,9 @@
 use auip::{
     storage::dynamic::{Addrs, Arp},
-    AddrsStorage, Interface,
+    Interface,
 };
 use auip_pkt::{layer2, layer3};
-use auip_tap::{open_tap_device, TapTunDevice};
+use auip_tap::TapTunDevice;
 use std::process::Command;
 
 fn main() {
@@ -26,8 +26,7 @@ fn main() {
         .unwrap();
     let _ = command.wait().unwrap();
 
-    let file = open_tap_device("tap0").unwrap();
-    let device = TapTunDevice::new(file);
+    let device = TapTunDevice::new_tap("tap0").unwrap();
 
     let mut addrs_storage = Addrs::default();
 

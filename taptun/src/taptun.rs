@@ -1,10 +1,10 @@
+use libc::{IFF_NO_PI, IFF_TAP, IFF_TUN};
+
 use crate::{Error, Result};
 use std::fs::{File, OpenOptions};
 use std::os::unix::io::AsRawFd;
 
 const TUNSETIFF: libc::c_ulong = 0x400454CA;
-const IFF_TAP: libc::c_int = 0x0002;
-const IFF_NO_PI: libc::c_int = 0x1000;
 
 #[repr(C)]
 #[derive(Debug)]
@@ -29,13 +29,19 @@ fn ifreq_ioctl(fd: libc::c_int, cmd: libc::c_ulong, ifreq: &mut Ifreq) -> libc::
     unsafe { libc::ioctl(fd, cmd as _, ifreq as *mut Ifreq) }
 }
 
-pub fn open_tap_device(name: &str) -> Result<File> {
+pub fn open_device(name: &str, is_tap: bool) -> Result<File> {
     let file = OpenOptions::new()
         .read(true)
         .write(true)
         .open("/dev/net/tun")?;
     let mut ifreq = ifreq_new(name);
-    ifreq.ifr_data = IFF_TAP | IFF_NO_PI;
+
+    if is_tap {
+        ifreq.ifr_data = IFF_TAP | IFF_NO_PI;
+    } else {
+        ifreq.ifr_data = IFF_TUN | IFF_NO_PI;
+    }
+
     let fd = file.as_raw_fd();
     let res = ifreq_ioctl(fd, TUNSETIFF, &mut ifreq);
     if res == -1 {

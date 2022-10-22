@@ -1,3 +1,5 @@
+//! Storage type.
+
 mod ring_curser;
 pub use ring_curser::*;
 

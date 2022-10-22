@@ -25,16 +25,26 @@ impl AddrsStorage for Addrs {
         &self.mac_addr
     }
 
-    fn set_mac_addr(&mut self, addr: layer2::Address) {
+    fn has_ip_addr(&self, ip_addr: &layer3::Address) -> bool {
+        let addrs = &self.ip_addrs;
+
+        addrs
+            .binary_search_by_key(ip_addr, |a| *a.address())
+            .is_ok()
+    }
+}
+
+impl Addrs {
+    pub fn set_mac_addr(&mut self, addr: layer2::Address) {
         self.mac_addr = addr;
     }
 
-    fn add_ip_addr(&mut self, addr: layer3::Cidr) -> Result<()> {
+    pub fn add_ip_addr(&mut self, addr: layer3::Cidr) -> Result<()> {
         self.ip_addrs.push(addr);
         Ok(())
     }
 
-    fn del_ip_addr(&mut self, addr: &layer3::Cidr) -> Result<()> {
+    pub fn del_ip_addr(&mut self, addr: &layer3::Cidr) -> Result<()> {
         if let Ok(pos) = self.ip_addrs.binary_search(addr) {
             self.ip_addrs.remove(pos);
 
@@ -42,10 +52,9 @@ impl AddrsStorage for Addrs {
         } else {
             Err(Error::IpAddrNotFound)
         }
-        // self.ip_addrs.remo;
     }
 
-    fn ip_addrs(&self) -> &[layer3::Cidr] {
+    pub fn ip_addrs(&self) -> &[layer3::Cidr] {
         &self.ip_addrs
     }
 }
