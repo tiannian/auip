@@ -12,11 +12,16 @@ pub struct Packet<T> {
 
 impl<T: AsRef<[u8]>> Display for Packet<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.write_str("Ipv4 Packet:}")?;
+        f.write_str("Ipv4 Packet:")?;
         f.write_fmt(format_args!(
-            "Destination: {}, Source: {}",
+            "Destination: {}, Source: {}, Length: {}, Ident: {}, TTL: {}, Protocol: {:?}, Checksum: {}",
             self.dst_addr(),
-            self.src_addr()
+            self.src_addr(),
+            self.total_len() as usize - self.header_len() as usize,
+            self.ident(),
+            self.ttl(),
+            self.protocol(),
+            self.checksum(),
         ))?;
         Ok(())
     }
