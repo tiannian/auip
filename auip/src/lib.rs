@@ -12,8 +12,8 @@ pub use error::*;
 mod device;
 pub use device::*;
 
-pub mod interface;
-pub use interface::{Interface, VlanConfig};
+mod interface;
+pub use interface::*;
 
 pub mod storage;
 

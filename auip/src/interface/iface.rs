@@ -1,9 +1,9 @@
 use auip_pkt::{
-    layer2::{self, ethernet, VlanId},
+    layer2::{self, ethernet},
     layer3,
 };
 
-use crate::{interface::utils, AddrsStorage, ArpStorage, Device, Medium, Result};
+use crate::{interface::utils, AddrsStorage, ArpStorage, Device, InterfaceConfig, Medium, Result};
 
 use super::action::Action;
 
@@ -12,9 +12,7 @@ pub struct Interface<D, AS, ARPS> {
     device: D,
     medium: Medium,
 
-    // Vland ID
-    vlanid0: Option<VlanId>,
-    vlanid1: Option<VlanId>,
+    config: InterfaceConfig,
 
     // Address storage
     addrs_storage: AS,
@@ -35,8 +33,7 @@ where
             device,
             medium,
             addrs_storage,
-            vlanid0: None,
-            vlanid1: None,
+            config: Default::default(),
             arp_storage,
         }
     }
@@ -65,6 +62,14 @@ where
         &mut self.arp_storage
     }
 
+    pub fn config(&self) -> &InterfaceConfig {
+        &self.config
+    }
+
+    pub fn config_mut(&mut self) -> &mut InterfaceConfig {
+        &mut self.config
+    }
+
     pub(crate) fn poll_ethernet(&mut self) -> Result<Action> {
         let device = &mut self.device;
 
@@ -73,6 +78,8 @@ where
         let arp_storage = &mut self.arp_storage;
 
         let addrs_storage = &mut self.addrs_storage;
+
+        let config = &self.config;
 
         if let Some(rx_bytes) = device.recv()? {
             let rx_pkt = ethernet::Packet::new_checked(rx_bytes)?;
@@ -92,7 +99,7 @@ where
             let l3 = match protocol {
                 layer2::Protocol::Layer3Protocol(l3) => l3,
                 layer2::Protocol::IEEE8021Q(vlanid, l3) => {
-                    if Some(vlanid) == self.vlanid0 {
+                    if Some(vlanid) == self.config.vlan.vlanid0 {
                         l3
                     } else {
                         log::debug!("VlanId mismatch, Drop it.");
@@ -100,7 +107,9 @@ where
                     }
                 }
                 layer2::Protocol::QinQ(vlanid, vlanid1, l3) => {
-                    if Some(vlanid) == self.vlanid0 && Some(vlanid1) == self.vlanid1 {
+                    if Some(vlanid) == self.config.vlan.vlanid0
+                        && Some(vlanid1) == self.config.vlan.vlanid1
+                    {
                         l3
                     } else {
                         log::debug!("VlanId mismatch, Drop it.");
@@ -138,6 +147,7 @@ where
                         spa,
                         this_mac_addr,
                         tpa,
+                        config,
                         addrs_storage,
                         arp_storage,
                     );

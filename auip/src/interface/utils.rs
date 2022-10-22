@@ -1,6 +1,8 @@
 use auip_pkt::{layer2, layer3, IntoInner};
 
-use crate::{interface::action::ArpBytes, AddrsStorage, ArpStorage, Error, Result};
+use crate::{
+    interface::action::ArpBytes, AddrsStorage, ArpStorage, Error, InterfaceConfig, Result,
+};
 
 use super::action::Action;
 
@@ -10,6 +12,7 @@ pub fn build_and_record_arp(
     spa: layer3::arp::ProtocolAddress,
     tha: layer2::Address,
     tpa: layer3::arp::ProtocolAddress,
+    config: &InterfaceConfig,
     addrs_storage: &impl AddrsStorage,
     arp_storage: &mut impl ArpStorage,
 ) -> Result<Action> {
@@ -29,6 +32,22 @@ pub fn build_and_record_arp(
 
         let mut layer2_pkt = layer2::ethernet::Packet::new_unchecked(arp_bytes);
 
+        layer2_pkt.set_src_addr(*addrs_storage.mac_addr());
+        layer2_pkt.set_dest_addr(sa);
+
+        let layer3_protocol = layer2::Layer3Protocol::ARP;
+
+        if config.vlan.tag_vlan0 {
+            let vlanid = config.vlan.vlanid0.ok_or(Error::NoVlanIdSet)?;
+            layer2_pkt.set_protocol(layer2::Protocol::IEEE8021Q(vlanid, layer3_protocol));
+        } else if config.vlan.tag_vlan0 && config.vlan.tag_vlan1 {
+            let vlanid0 = config.vlan.vlanid0.ok_or(Error::NoVlanIdSet)?;
+            let vlanid1 = config.vlan.vlanid0.ok_or(Error::NoVlanIdSet)?;
+            layer2_pkt.set_protocol(layer2::Protocol::QinQ(vlanid0, vlanid1, layer3_protocol));
+        } else {
+            layer2_pkt.set_protocol(layer2::Protocol::Layer3Protocol(layer3_protocol));
+        }
+
         let mut pkt = layer3::arp::Packet::new_unchecked(layer2_pkt.payload_mut());
 
         pkt.set_operation(layer3::arp::Operation::Reply);
@@ -37,12 +56,6 @@ pub fn build_and_record_arp(
         pkt.set_source_protocol_address(tpa)?;
         pkt.set_target_hardware_address(sha)?;
         pkt.set_target_protocol_address(spa)?;
-
-        layer2_pkt.set_src_addr(*addrs_storage.mac_addr());
-        layer2_pkt.set_dest_addr(sa);
-        layer2_pkt.set_protocol(layer2::Protocol::Layer3Protocol(
-            layer2::Layer3Protocol::ARP,
-        ));
 
         log::debug!("Send packet: {}", layer2_pkt);
 

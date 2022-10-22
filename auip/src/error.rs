@@ -11,6 +11,8 @@ pub enum Error {
 
     IpAddrNotFound,
 
+    NoVlanIdSet,
+
     PacketError(auip_pkt::Error),
 }
 

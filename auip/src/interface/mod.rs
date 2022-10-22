@@ -3,9 +3,9 @@
 mod iface;
 pub use iface::*;
 
-mod vlan;
-pub use vlan::*;
+mod config;
+pub use config::*;
 
-pub mod action;
+pub(crate) mod action;
 
 pub(crate) mod utils;
