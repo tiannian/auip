@@ -6,18 +6,10 @@ use auip_pkt::{
 
 use crate::{AddrsStorage, Error, Result};
 
+#[derive(Default, Debug)]
 pub struct Addrs {
     pub mac_addr: layer2::Address,
     pub ip_addrs: Vec<Cidr>,
-}
-
-impl Default for Addrs {
-    fn default() -> Self {
-        Self {
-            mac_addr: Default::default(),
-            ip_addrs: Vec::new(),
-        }
-    }
 }
 
 impl AddrsStorage for Addrs {

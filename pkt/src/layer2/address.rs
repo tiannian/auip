@@ -51,7 +51,7 @@ impl Address {
     }
 
     pub fn parse(s: &str) -> Result<Self> {
-        let mut segments = s.split(":");
+        let mut segments = s.split(':');
 
         let mut inner = [0u8; 6];
 

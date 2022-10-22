@@ -1,52 +1,60 @@
-use libc::{IFF_NO_PI, IFF_TAP, IFF_TUN};
+use std::{
+    fs::File,
+    io::{Read, Write},
+};
 
-use crate::{Error, Result};
-use std::fs::{File, OpenOptions};
-use std::os::unix::io::AsRawFd;
+use auip::Device;
 
-const TUNSETIFF: libc::c_ulong = 0x400454CA;
+use crate::{open_device, Result};
 
-#[repr(C)]
-#[derive(Debug)]
-struct Ifreq {
-    ifr_name: [libc::c_char; libc::IF_NAMESIZE],
-    ifr_data: libc::c_int, /* ifr_ifindex or ifr_mtu */
+pub struct TapTunDevice {
+    pub rx_buffer: [u8; 1536],
+    pub len: usize,
+    pub file: File,
 }
 
-fn ifreq_new(name: &str) -> Ifreq {
-    let mut ifreq = Ifreq {
-        ifr_name: [0; libc::IF_NAMESIZE],
-        ifr_data: 0,
-    };
-    // set name.
-    for (i, byte) in name.as_bytes().iter().enumerate() {
-        ifreq.ifr_name[i] = *byte as libc::c_char
-    }
-    ifreq
-}
+impl TapTunDevice {
+    pub fn new_tap(ifname: &str) -> Result<Self> {
+        let file = open_device(ifname, true)?;
 
-fn ifreq_ioctl(fd: libc::c_int, cmd: libc::c_ulong, ifreq: &mut Ifreq) -> libc::c_int {
-    unsafe { libc::ioctl(fd, cmd as _, ifreq as *mut Ifreq) }
-}
-
-pub fn open_device(name: &str, is_tap: bool) -> Result<File> {
-    let file = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .open("/dev/net/tun")?;
-    let mut ifreq = ifreq_new(name);
-
-    if is_tap {
-        ifreq.ifr_data = IFF_TAP | IFF_NO_PI;
-    } else {
-        ifreq.ifr_data = IFF_TUN | IFF_NO_PI;
+        Ok(Self {
+            rx_buffer: [0u8; 1536],
+            len: 0,
+            file,
+        })
     }
 
-    let fd = file.as_raw_fd();
-    let res = ifreq_ioctl(fd, TUNSETIFF, &mut ifreq);
-    if res == -1 {
-        Err(Error::StdIOError(std::io::Error::last_os_error()))
-    } else {
-        Ok(file)
+    pub fn new_tun(ifname: &str) -> Result<Self> {
+        let file = open_device(ifname, false)?;
+
+        Ok(Self {
+            rx_buffer: [0u8; 1536],
+            len: 0,
+            file,
+        })
+    }
+
+    pub fn poll_read(&mut self) {
+        let len = self.file.read(&mut self.rx_buffer).unwrap();
+        self.len = len;
+    }
+}
+
+impl Device for TapTunDevice {
+    fn medium(&self) -> auip::Medium {
+        auip::Medium::Ethernet
+    }
+
+    fn recv(&mut self) -> auip::Result<Option<&[u8]>> {
+        if self.len == 0 {
+            Ok(None)
+        } else {
+            Ok(Some(&self.rx_buffer[..self.len]))
+        }
+    }
+
+    fn send(&mut self, buffer: &[u8]) -> auip::Result<()> {
+        self.file.write_all(buffer).unwrap();
+        Ok(())
     }
 }

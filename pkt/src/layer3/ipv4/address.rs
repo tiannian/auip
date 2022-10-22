@@ -35,13 +35,13 @@ impl Address {
     }
 
     pub fn parse(s: &str) -> Result<Self> {
-        let mut segments = s.split(".");
+        let mut segments = s.split('.');
 
         let mut inner = [0u8; 4];
 
         for i in inner.iter_mut() {
             if let Some(seg) = segments.next() {
-                *i = u8::from_str_radix(seg, 10)?;
+                *i = seg.parse::<u8>()?;
             } else {
                 return Err(Error::ParseIpv4AddressFailed);
             }

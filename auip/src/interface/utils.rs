@@ -46,10 +46,10 @@ pub fn build_and_record_arp(
 
         log::debug!("Send packet: {}", layer2_pkt);
 
-        return Ok(Action::SendArp(layer2_pkt.into_inner()));
+        Ok(Action::SendArp(layer2_pkt.into_inner()))
     } else {
         log::debug!("Ip address mismatch, Drop it.");
-        return Ok(Action::NoAction);
+        Ok(Action::NoAction)
     }
 }
 

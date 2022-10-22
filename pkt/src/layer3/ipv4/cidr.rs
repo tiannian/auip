@@ -24,13 +24,13 @@ impl Cidr {
     }
 
     pub fn parse(s: &str) -> Result<Self> {
-        let mut segments = s.split("/");
+        let mut segments = s.split('/');
 
         let addr = segments.next().ok_or(Error::ParseIpv4CidrFailed)?;
         let mk = segments.next().ok_or(Error::ParseIpv4CidrFailed)?;
 
         let address = Address::parse(addr)?;
-        let prefix_len = u8::from_str_radix(mk, 10)?;
+        let prefix_len = mk.parse::<u8>()?;
 
         Ok(Self {
             address,
