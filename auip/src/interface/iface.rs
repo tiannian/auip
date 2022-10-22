@@ -134,7 +134,7 @@ where
                 layer2::Layer3Protocol::ARP => {
                     let pkt = layer3::arp::Packet::new_checked(rx_pkt.payload())?;
 
-                    log::debug!("Receive arp packet: {}", pkt);
+                    log::debug!("Receive packet: {}", pkt);
 
                     let sha = pkt.source_hardware_address()?;
                     let spa = pkt.source_protocol_address()?;
