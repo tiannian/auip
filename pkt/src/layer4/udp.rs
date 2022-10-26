@@ -1,6 +1,10 @@
 use byteorder::{ByteOrder, NetworkEndian};
 
-use crate::{layer3::{self, Address}, utils::checksum, Error, IntoInner, Result};
+use crate::{
+    layer3::{self, Address},
+    utils::checksum,
+    Error, IntoInner, Result,
+};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Packet<T> {
@@ -22,7 +26,7 @@ mod field {
     pub const HEADER_LEN: usize = CHECKSUM.end;
 }
 
-impl<T: AsRef<[u8]>> IntoInner for Packet<T> {
+impl<T> IntoInner for Packet<T> {
     type Inner = T;
 
     fn into_inner(self) -> T {
@@ -87,7 +91,11 @@ impl<T: AsRef<[u8]>> Packet<T> {
     }
 
     /// Validate the packet checksum.
-    pub fn verify_checksum(&self, src_addr: &layer3::Address, dst_addr: &layer3::Address) -> Result<bool> {
+    pub fn verify_checksum(
+        &self,
+        src_addr: &layer3::Address,
+        dst_addr: &layer3::Address,
+    ) -> Result<bool> {
         // From the RFC:
         // > An all zero transmitted checksum value means that the transmitter
         // > generated no checksum (for debugging or for higher level protocols
@@ -150,7 +158,12 @@ impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
         let checksum = {
             let data = self.buffer.as_ref();
             !checksum::combine(&[
-                checksum::pseudo_ip_header(src_addr, dst_addr, layer3::Protocol::Udp.into(), self.len() as u32)?,
+                checksum::pseudo_ip_header(
+                    src_addr,
+                    dst_addr,
+                    layer3::Protocol::Udp.into(),
+                    self.len() as u32,
+                )?,
                 checksum::data(&data[..self.len() as usize]),
             ])
         };
@@ -170,4 +183,3 @@ impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
         &mut data[field::payload(length)]
     }
 }
-

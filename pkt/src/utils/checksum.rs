@@ -1,6 +1,6 @@
 use byteorder::{ByteOrder, NetworkEndian};
 
-use crate::{layer3::Address, Result, Error};
+use crate::{layer3::Address, Error, Result};
 
 fn propagate_carries(word: u32) -> u16 {
     let sum = (word >> 16) + (word & 0xffff);
@@ -67,15 +67,15 @@ pub fn pseudo_ip_header(
                 data(&proto_len[..]),
             ]))
         }
-/*         (&Address::Ipv6(src_addr), &Address::Ipv6(dst_addr)) => { */
-            /* let mut proto_len = [0u8; 8]; */
-            /* proto_len[7] = next_header.into(); */
-            /* NetworkEndian::write_u32(&mut proto_len[0..4], length); */
-            /* combine(&[ */
-            /*     data(src_addr.as_bytes()), */
-            /*     data(dst_addr.as_bytes()), */
-            /*     data(&proto_len[..]), */
-            /* ]) */
+        /*         (&Address::Ipv6(src_addr), &Address::Ipv6(dst_addr)) => { */
+        /* let mut proto_len = [0u8; 8]; */
+        /* proto_len[7] = next_header.into(); */
+        /* NetworkEndian::write_u32(&mut proto_len[0..4], length); */
+        /* combine(&[ */
+        /*     data(src_addr.as_bytes()), */
+        /*     data(dst_addr.as_bytes()), */
+        /*     data(&proto_len[..]), */
+        /* ]) */
         /* } */
         _ => Err(Error::SrcAndDstMustSame),
     }

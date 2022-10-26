@@ -14,7 +14,7 @@ impl<T: AsRef<[u8]>> Display for Packet<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.write_str("Ipv4 Packet:")?;
         f.write_fmt(format_args!(
-            "Destination: {}, Source: {}, Length: {}, Ident: {}, TTL: {}, Protocol: {:?}, Checksum: {}",
+            "Destination: {}, Source: {}, Length: {}, Ident: {}, TTL: {}, Protocol: {:?},  Checksum: {}. ",
             self.dst_addr(),
             self.src_addr(),
             self.total_len() as usize - self.header_len() as usize,
@@ -23,6 +23,17 @@ impl<T: AsRef<[u8]>> Display for Packet<T> {
             self.protocol(),
             self.checksum(),
         ))?;
+
+        if self.dont_frag() {
+            f.write_str("This not a frag packet.")?;
+        } else {
+            f.write_fmt(format_args!(
+                "more: {}, offset: {}",
+                self.more_frags(),
+                self.frag_offset()
+            ))?;
+        }
+
         Ok(())
     }
 }

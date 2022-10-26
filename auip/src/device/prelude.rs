@@ -33,3 +33,5 @@ pub trait ArpStorage {
     /// Get mac address according mac address
     fn mac_addr(&self, ip_addr: &layer3::ipv4::Address) -> Result<Option<layer2::Address>>;
 }
+
+pub trait RxBuffer {}
