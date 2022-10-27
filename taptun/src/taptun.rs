@@ -11,6 +11,7 @@ pub struct TapTunDevice {
     pub rx_buffer: [u8; 1536],
     pub len: usize,
     pub file: File,
+    pub medium: auip::Medium,
 }
 
 impl TapTunDevice {
@@ -21,6 +22,7 @@ impl TapTunDevice {
             rx_buffer: [0u8; 1536],
             len: 0,
             file,
+            medium: auip::Medium::Ethernet,
         })
     }
 
@@ -31,6 +33,7 @@ impl TapTunDevice {
             rx_buffer: [0u8; 1536],
             len: 0,
             file,
+            medium: auip::Medium::Ip,
         })
     }
 
@@ -42,7 +45,7 @@ impl TapTunDevice {
 
 impl Device for TapTunDevice {
     fn medium(&self) -> auip::Medium {
-        auip::Medium::Ethernet
+        self.medium.clone()
     }
 
     fn recv(&mut self) -> auip::Result<Option<&[u8]>> {
