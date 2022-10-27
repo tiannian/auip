@@ -1,5 +1,5 @@
 use auip::{
-    storage::dynamic::{Addrs, Arp},
+    storage::dynamic::{Addrs, Arp, IpFragment},
     Interface,
 };
 use auip_pkt::{layer2, layer3};
@@ -38,7 +38,9 @@ fn main() {
 
     let arp_storage = Arp::default();
 
-    let mut iface = Interface::new(device, addrs_storage, arp_storage);
+    let ip_fragment = IpFragment::new(5);
+
+    let mut iface = Interface::new(device, addrs_storage, arp_storage, ip_fragment);
 
     loop {
         iface.device_mut().poll_read();

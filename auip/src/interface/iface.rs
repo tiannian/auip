@@ -4,14 +4,14 @@ use auip_pkt::{
 };
 
 use crate::{
-    build_and_record_arp, poll_ipv4, AddrsStorage, ArpStorage, Device, InterfaceConfig, Medium,
-    Result,
+    build_and_record_arp, poll_ipv4, AddrsStorage, ArpStorage, Device, InterfaceConfig,
+    IpFragmentBuffer, Medium, Result,
 };
 
 use super::action::Action;
 
 /// Network interface
-pub struct Interface<D, AS, ARPS> {
+pub struct Interface<D, AS, ARPS, IFB> {
     device: D,
     medium: Medium,
 
@@ -21,15 +21,18 @@ pub struct Interface<D, AS, ARPS> {
     addrs_storage: AS,
 
     arp_storage: ARPS,
+
+    ip_fragment_buffer: IFB,
 }
 
-impl<D, AS, ARPS> Interface<D, AS, ARPS>
+impl<D, AS, ARPS, IFB> Interface<D, AS, ARPS, IFB>
 where
     D: Device,
     AS: AddrsStorage,
     ARPS: ArpStorage,
+    IFB: IpFragmentBuffer,
 {
-    pub fn new(device: D, addrs_storage: AS, arp_storage: ARPS) -> Self {
+    pub fn new(device: D, addrs_storage: AS, arp_storage: ARPS, ip_fragment_buffer: IFB) -> Self {
         let medium = device.medium();
 
         Self {
@@ -38,6 +41,7 @@ where
             addrs_storage,
             config: Default::default(),
             arp_storage,
+            ip_fragment_buffer,
         }
     }
 

@@ -1,0 +1,1 @@
+pub const MAX_IP_FRAGMENT_PACKET_LENGTH: usize = 65536;

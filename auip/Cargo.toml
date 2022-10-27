@@ -11,6 +11,25 @@ log = "0.4"
 auip-pkt = {path = "../pkt"}
 
 [features]
-default = ["alloc"]
+default = []
 alloc = []
+
+# Layer 2
+disable-layer2 = []
+vlan = []
+qinq = ["vlan"]
+
+# Layer 3
+ipv4 = []
+ipv6 = []
+
+ip-fragment = []
+
+# Layer 4
+udp = []
+
+# Application layer
+dhcp = []
+dhcpv6 = []
+dns = []
 

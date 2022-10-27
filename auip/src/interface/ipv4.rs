@@ -1,6 +1,6 @@
 use auip_pkt::{layer3, layer4};
 
-use crate::{Result, poll_udp};
+use crate::{poll_udp, Result};
 
 pub fn poll_ipv4(pkt: layer3::ipv4::Packet<&[u8]>) -> Result<()> {
     log::debug!("Receive packet: {}", pkt);
