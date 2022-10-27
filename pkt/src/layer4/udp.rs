@@ -1,3 +1,5 @@
+use core::fmt::{self, Display, Formatter};
+
 use byteorder::{ByteOrder, NetworkEndian};
 
 use crate::{
@@ -31,6 +33,20 @@ impl<T> IntoInner for Packet<T> {
 
     fn into_inner(self) -> T {
         self.buffer
+    }
+}
+
+impl<T: AsRef<[u8]>> Display for Packet<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str("UDP Packet:")?;
+        f.write_fmt(format_args!(
+            "Src port: {}, Dst port: {}, Length: {}",
+            self.src_port(),
+            self.dst_port(),
+            self.len(),
+        ))?;
+
+        Ok(())
     }
 }
 

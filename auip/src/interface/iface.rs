@@ -3,7 +3,10 @@ use auip_pkt::{
     layer3,
 };
 
-use crate::{interface::utils, AddrsStorage, ArpStorage, Device, InterfaceConfig, Medium, Result};
+use crate::{
+    build_and_record_arp, poll_ipv4, AddrsStorage, ArpStorage, Device, InterfaceConfig, Medium,
+    Result,
+};
 
 use super::action::Action;
 
@@ -89,7 +92,7 @@ where
             let dest_addr = rx_pkt.dest_addr();
 
             if dest_addr != this_mac_addr && dest_addr != layer2::Address::BROADCAST {
-                log::debug!("Mac address mismatch, Drop it.");
+                log::debug!("Mac address {} mismatch, Drop it.", dest_addr);
 
                 return Ok(Action::NoAction);
             }
@@ -141,7 +144,7 @@ where
                     let tpa = pkt.target_protocol_address()?;
                     let sa = rx_pkt.src_addr();
 
-                    return utils::build_and_record_arp(
+                    return build_and_record_arp(
                         sa,
                         sha,
                         spa,
@@ -155,7 +158,7 @@ where
                 layer2::Layer3Protocol::IPv4 => {
                     let pkt = layer3::ipv4::Packet::new_checked(rx_pkt.payload())?;
 
-                    utils::poll_ipv4(pkt)?;
+                    poll_ipv4(pkt)?;
                 }
                 layer2::Layer3Protocol::IPv6 => {}
                 layer2::Layer3Protocol::Unknown(_) => {}
@@ -170,7 +173,7 @@ where
             let ip_pkt = layer3::IpPacket::parse(rx_bytes)?;
 
             match ip_pkt {
-                layer3::IpPacket::IPv4(pkt) => utils::poll_ipv4(pkt)?,
+                layer3::IpPacket::IPv4(pkt) => poll_ipv4(pkt)?,
                 layer3::IpPacket::Ipv6 => {}
             }
         }

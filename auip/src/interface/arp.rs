@@ -65,8 +65,3 @@ pub fn build_and_record_arp(
         Ok(Action::NoAction)
     }
 }
-
-pub fn poll_ipv4(bytes: layer3::ipv4::Packet<&[u8]>) -> Result<()> {
-    log::debug!("Receive packet: {}", bytes);
-    Ok(())
-}
