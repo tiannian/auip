@@ -5,6 +5,7 @@ use crate::{consts::MAX_IP_FRAGMENT_PACKET_LENGTH, IpFragmentBuffer};
 pub struct IpFragment {
     pub max_length: usize,
     pub buffers: Vec<u8>,
+    // pub mapping:
 }
 
 impl IpFragment {
@@ -18,10 +19,6 @@ impl IpFragment {
 }
 
 impl IpFragmentBuffer for IpFragment {
-    fn capacity(&self) -> usize {
-        self.max_length
-    }
-
     fn get_buffer(&mut self, idx: usize) -> Option<&mut [u8]> {
         if idx < self.max_length {
             let end = (idx + 1) * MAX_IP_FRAGMENT_PACKET_LENGTH;

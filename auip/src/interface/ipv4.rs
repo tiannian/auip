@@ -1,8 +1,11 @@
 use auip_pkt::{layer3, layer4};
 
-use crate::{poll_udp, Result};
+use crate::{poll_udp, IpFragmentBuffer, Result};
 
-pub fn poll_ipv4(pkt: layer3::ipv4::Packet<&[u8]>) -> Result<()> {
+pub fn poll_ipv4(
+    pkt: layer3::ipv4::Packet<&[u8]>,
+    ip_fragment_buffer: &mut impl IpFragmentBuffer,
+) -> Result<()> {
     log::debug!("Receive packet: {}", pkt);
 
     // Drop ttl is 0.
@@ -26,13 +29,16 @@ pub fn poll_ipv4(pkt: layer3::ipv4::Packet<&[u8]>) -> Result<()> {
             _ => {}
         }
     } else {
-        return Ok(());
-    }
+        let ident = pkt.ident();
 
-    if pkt.more_frags() {
-        // save frag.
-    } else {
-        // complete frag.
+        // Ip fragment support.
+        if pkt.more_frags() {
+            // save frag.
+            let buffer = ip_fragment_buffer.get_buffer(ident);
+            let offset = pkt.frag_offset();
+        } else {
+            // complete frag.
+        }
     }
 
     Ok(())

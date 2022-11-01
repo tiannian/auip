@@ -88,6 +88,8 @@ where
 
         let config = &self.config;
 
+        let ip_fragment_buffer = &mut self.ip_fragment_buffer;
+
         if let Some(rx_bytes) = device.recv()? {
             let rx_pkt = ethernet::Packet::new_checked(rx_bytes)?;
 
@@ -162,7 +164,7 @@ where
                 layer2::Layer3Protocol::IPv4 => {
                     let pkt = layer3::ipv4::Packet::new_checked(rx_pkt.payload())?;
 
-                    poll_ipv4(pkt)?;
+                    poll_ipv4(pkt, ip_fragment_buffer)?;
                 }
                 layer2::Layer3Protocol::IPv6 => {}
                 layer2::Layer3Protocol::Unknown(_) => {}
@@ -173,11 +175,13 @@ where
     }
 
     pub(crate) fn poll_ip(&mut self) -> Result<()> {
+        let ip_fragment_buffer = &mut self.ip_fragment_buffer;
+
         if let Some(rx_bytes) = self.device.recv()? {
             let ip_pkt = layer3::IpPacket::parse(rx_bytes)?;
 
             match ip_pkt {
-                layer3::IpPacket::IPv4(pkt) => poll_ipv4(pkt)?,
+                layer3::IpPacket::IPv4(pkt) => poll_ipv4(pkt, ip_fragment_buffer)?,
                 layer3::IpPacket::Ipv6 => {}
             }
         }

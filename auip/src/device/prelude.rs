@@ -34,11 +34,8 @@ pub trait ArpStorage {
     fn mac_addr(&self, ip_addr: &layer3::ipv4::Address) -> Result<Option<layer2::Address>>;
 }
 
-#[cfg(feature = "ip-fragment")]
 /// Buffer to store ip fragment.
 pub trait IpFragmentBuffer {
     /// Get ip fragment buffer, buffer length is 64k
-    fn get_buffer(&mut self, idx: usize) -> Option<&mut [u8]>;
-
-    fn capacity(&self) -> usize;
+    fn get_buffer(&mut self, ident: u16) -> Option<&mut [u8]>;
 }
