@@ -19,7 +19,7 @@ Network support these packet and function:
 
 - [X] Ipv4
 - [X] Arp
-- [ ] Ip Fragment
+- [X] Ip Fragment
 - [ ] ICMP
 - [ ] Ipv6
 - [ ] ICMPv6 (NDP)
