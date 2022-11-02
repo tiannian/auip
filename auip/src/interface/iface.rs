@@ -4,14 +4,14 @@ use auip_pkt::{
 };
 
 use crate::{
-    build_and_record_arp, poll_ipv4, AddrsStorage, ArpStorage, Device, InterfaceConfig, Medium,
-    Result,
+    build_and_record_arp, poll_ipv4, AddrsStorage, ArpStorage, Device, InterfaceConfig,
+    IpFragmentBuffer, Medium, Result,
 };
 
 use super::action::Action;
 
 /// Network interface
-pub struct Interface<D, AS, ARPS> {
+pub struct Interface<D, AS, ARPS, IFB> {
     device: D,
     medium: Medium,
 
@@ -21,15 +21,18 @@ pub struct Interface<D, AS, ARPS> {
     addrs_storage: AS,
 
     arp_storage: ARPS,
+
+    ip_fragment_buffer: IFB,
 }
 
-impl<D, AS, ARPS> Interface<D, AS, ARPS>
+impl<D, AS, ARPS, IFB> Interface<D, AS, ARPS, IFB>
 where
     D: Device,
     AS: AddrsStorage,
     ARPS: ArpStorage,
+    IFB: IpFragmentBuffer,
 {
-    pub fn new(device: D, addrs_storage: AS, arp_storage: ARPS) -> Self {
+    pub fn new(device: D, addrs_storage: AS, arp_storage: ARPS, ip_fragment_buffer: IFB) -> Self {
         let medium = device.medium();
 
         Self {
@@ -38,6 +41,7 @@ where
             addrs_storage,
             config: Default::default(),
             arp_storage,
+            ip_fragment_buffer,
         }
     }
 
@@ -83,6 +87,8 @@ where
         let addrs_storage = &mut self.addrs_storage;
 
         let config = &self.config;
+
+        let ip_fragment_buffer = &mut self.ip_fragment_buffer;
 
         if let Some(rx_bytes) = device.recv()? {
             let rx_pkt = ethernet::Packet::new_checked(rx_bytes)?;
@@ -158,7 +164,7 @@ where
                 layer2::Layer3Protocol::IPv4 => {
                     let pkt = layer3::ipv4::Packet::new_checked(rx_pkt.payload())?;
 
-                    poll_ipv4(pkt)?;
+                    poll_ipv4(pkt, ip_fragment_buffer)?;
                 }
                 layer2::Layer3Protocol::IPv6 => {}
                 layer2::Layer3Protocol::Unknown(_) => {}
@@ -169,11 +175,13 @@ where
     }
 
     pub(crate) fn poll_ip(&mut self) -> Result<()> {
+        let ip_fragment_buffer = &mut self.ip_fragment_buffer;
+
         if let Some(rx_bytes) = self.device.recv()? {
             let ip_pkt = layer3::IpPacket::parse(rx_bytes)?;
 
             match ip_pkt {
-                layer3::IpPacket::IPv4(pkt) => poll_ipv4(pkt)?,
+                layer3::IpPacket::IPv4(pkt) => poll_ipv4(pkt, ip_fragment_buffer)?,
                 layer3::IpPacket::Ipv6 => {}
             }
         }

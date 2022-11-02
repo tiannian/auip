@@ -1,8 +1,11 @@
 use auip_pkt::{layer3, layer4};
 
-use crate::{Result, poll_udp};
+use crate::{poll_udp, IpFragmentBuffer, Result};
 
-pub fn poll_ipv4(pkt: layer3::ipv4::Packet<&[u8]>) -> Result<()> {
+pub(crate) fn poll_ipv4(
+    pkt: layer3::ipv4::Packet<&[u8]>,
+    ip_fragment_buffer: &mut impl IpFragmentBuffer,
+) -> Result<()> {
     log::debug!("Receive packet: {}", pkt);
 
     // Drop ttl is 0.
@@ -11,28 +14,41 @@ pub fn poll_ipv4(pkt: layer3::ipv4::Packet<&[u8]>) -> Result<()> {
     }
 
     // Check is fragment
-    if pkt.dont_frag() {
+    let payload = if pkt.dont_frag() {
         // enter upper layer.
-        let protocol = pkt.protocol();
+        pkt.payload()
+    } else {
+        let ident = pkt.ident();
 
-        let payload = pkt.payload();
+        // Ip fragment support.
+        if pkt.more_frags() {
+            // save frag.
+            let payload = pkt.payload();
+            let payload_len = payload.len();
+            let offset = pkt.frag_offset() as usize;
 
-        match protocol {
-            layer3::Protocol::Udp => {
-                let pkt = layer4::udp::Packet::new_checked(payload)?;
+            let buffer = ip_fragment_buffer.get_buffer(ident);
+            let target_buf = &mut buffer[offset..payload_len];
+            target_buf.copy_from_slice(payload);
 
-                poll_udp(pkt)?;
-            }
-            _ => {}
+            return Ok(());
+        } else {
+            let length = pkt.total_len() - pkt.header_len() as u16 + pkt.frag_offset();
+            let buffer = ip_fragment_buffer.get_buffer(ident);
+            &buffer[0..length as usize]
         }
-    } else {
-        return Ok(());
-    }
+    };
 
-    if pkt.more_frags() {
-        // save frag.
-    } else {
-        // complete frag.
+    let protocol = pkt.protocol();
+
+    match protocol {
+        layer3::Protocol::Udp => {
+            let pkt = layer4::udp::Packet::new_checked(payload)?;
+
+            poll_udp(pkt)?;
+        }
+        layer3::Protocol::Icmp => {}
+        _ => {}
     }
 
     Ok(())

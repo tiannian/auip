@@ -9,10 +9,10 @@ pub use config::*;
 pub(crate) mod action;
 
 mod arp;
-pub use arp::*;
+pub(crate) use arp::*;
 
 mod ipv4;
-pub use ipv4::*;
+pub(crate) use ipv4::*;
 
 mod udp;
 pub use udp::*;

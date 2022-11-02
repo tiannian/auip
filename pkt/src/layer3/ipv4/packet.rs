@@ -17,7 +17,7 @@ impl<T: AsRef<[u8]>> Display for Packet<T> {
             "Destination: {}, Source: {}, Length: {}, Ident: {}, TTL: {}, Protocol: {:?},  Checksum: {}. ",
             self.dst_addr(),
             self.src_addr(),
-            self.total_len() as usize - self.header_len() as usize,
+            self.total_len(),
             self.ident(),
             self.ttl(),
             self.protocol(),

@@ -18,3 +18,5 @@ pub use interface::*;
 pub mod storage;
 
 pub mod utils;
+
+pub mod consts;
