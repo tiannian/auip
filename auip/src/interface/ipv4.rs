@@ -14,31 +14,49 @@ pub fn poll_ipv4(
     }
 
     // Check is fragment
-    if pkt.dont_frag() {
+    let payload = if pkt.dont_frag() {
         // enter upper layer.
-        let protocol = pkt.protocol();
-
-        let payload = pkt.payload();
-
-        match protocol {
-            layer3::Protocol::Udp => {
-                let pkt = layer4::udp::Packet::new_checked(payload)?;
-
-                poll_udp(pkt)?;
-            }
-            _ => {}
-        }
+        pkt.payload()
     } else {
         let ident = pkt.ident();
 
         // Ip fragment support.
         if pkt.more_frags() {
             // save frag.
-            let buffer = ip_fragment_buffer.get_buffer(ident);
-            let offset = pkt.frag_offset();
+            let payload = pkt.payload();
+            let payload_len = payload.len();
+            let offset = pkt.frag_offset() as usize;
+
+            if let Some(buffer) = ip_fragment_buffer.get_buffer(ident) {
+                let target_buf = &mut buffer[offset..payload_len];
+
+                target_buf.copy_from_slice(payload);
+            } else {
+                log::warn!("No buffer to store ip fragment");
+            }
+
+            return Ok(());
         } else {
-            // complete frag.
+            let length = pkt.total_len();
+
+            if let Some(buffer) = ip_fragment_buffer.get_buffer(ident) {
+                &buffer[0..length as usize]
+            } else {
+                log::warn!("No buffer to store ip fragment");
+                return Ok(());
+            }
         }
+    };
+
+    let protocol = pkt.protocol();
+
+    match protocol {
+        layer3::Protocol::Udp => {
+            let pkt = layer4::udp::Packet::new_checked(payload)?;
+
+            poll_udp(pkt)?;
+        }
+        _ => {}
     }
 
     Ok(())

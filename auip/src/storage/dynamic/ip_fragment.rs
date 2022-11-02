@@ -19,7 +19,7 @@ impl IpFragment {
 }
 
 impl IpFragmentBuffer for IpFragment {
-    fn get_buffer(&mut self, idx: usize) -> Option<&mut [u8]> {
+    fn get_buffer(&mut self, idx: u16) -> Option<&mut [u8]> {
         if idx < self.max_length {
             let end = (idx + 1) * MAX_IP_FRAGMENT_PACKET_LENGTH;
             let begin = idx * MAX_IP_FRAGMENT_PACKET_LENGTH;
