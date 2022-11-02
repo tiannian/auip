@@ -15,3 +15,7 @@ env_logger = "0.8"
 auip = { path = "../auip" }
 auip-pkt = { path = "../pkt" }
 
+[[example]]
+name = "tap_stack"
+required-features = ["alloc"]
+

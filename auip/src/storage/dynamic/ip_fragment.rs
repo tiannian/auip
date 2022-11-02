@@ -31,7 +31,7 @@ impl IpFragmentBuffer for IpFragment {
             if self.curser == self.max_length {
                 self.curser = 0;
             }
-            log::info!("Current curser is {}, map to {}", self.curser, ident);
+            log::debug!("Current curser is {}, map to {}", self.curser, ident);
             self.mapping.insert(ident, self.curser);
             self.curser
         };

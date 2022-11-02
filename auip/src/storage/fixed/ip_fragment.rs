@@ -36,7 +36,7 @@ impl<const N: usize> IpFragmentBuffer for IpFragment<N> {
             if self.curser == N {
                 self.curser = 0;
             }
-            log::info!("Current curser is {}, map to {}", self.curser, ident);
+            log::debug!("Current curser is {}, map to {}", self.curser, ident);
             self.mapping[self.curser] = ident;
             self.curser
         };
