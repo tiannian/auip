@@ -43,7 +43,7 @@ impl<T: AsRef<[u8]>> Display for Packet<T> {
             "Src port: {}, Dst port: {}, Length: {}",
             self.src_port(),
             self.dst_port(),
-            self.len(),
+            self.length(),
         ))?;
 
         Ok(())
@@ -56,7 +56,7 @@ impl<T: AsRef<[u8]>> Packet<T> {
         Packet { buffer }
     }
 
-    /// Shorthand for a combination of [new_unchecked] and [check_len].
+    /// Shorthand for a combination of new_unchecked and check_len.
     pub fn new_checked(buffer: T) -> Result<Packet<T>> {
         let packet = Self::new_unchecked(buffer);
         packet.check_len()?;
@@ -69,7 +69,7 @@ impl<T: AsRef<[u8]>> Packet<T> {
         if buffer_len < field::HEADER_LEN {
             Err(Error::WrongLengthForBufferLength)
         } else {
-            let field_len = self.len() as usize;
+            let field_len = self.length() as usize;
             if buffer_len < field_len || field_len < field::HEADER_LEN {
                 Err(Error::WrongLengthForBufferLength)
             } else {
@@ -94,7 +94,7 @@ impl<T: AsRef<[u8]>> Packet<T> {
 
     /// Return the length field.
     #[inline]
-    pub fn len(&self) -> u16 {
+    pub fn length(&self) -> u16 {
         let data = self.buffer.as_ref();
         NetworkEndian::read_u16(&data[field::LENGTH])
     }
@@ -126,14 +126,14 @@ impl<T: AsRef<[u8]>> Packet<T> {
                 src_addr,
                 dst_addr,
                 layer3::Protocol::Udp.into(),
-                self.len() as u32,
+                self.length() as u32,
             )?,
-            checksum::data(&data[..self.len() as usize]),
+            checksum::data(&data[..self.length() as usize]),
         ]) == !0)
     }
 
     pub fn payload(&self) -> &[u8] {
-        let length = self.len();
+        let length = self.length();
         let data = self.buffer.as_ref();
         &data[field::payload(length)]
     }
@@ -178,9 +178,9 @@ impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
                     src_addr,
                     dst_addr,
                     layer3::Protocol::Udp.into(),
-                    self.len() as u32,
+                    self.length() as u32,
                 )?,
-                checksum::data(&data[..self.len() as usize]),
+                checksum::data(&data[..self.length() as usize]),
             ])
         };
         // UDP checksum value of 0 means no checksum; if the checksum really is zero,
@@ -194,7 +194,7 @@ impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
     /// Return a mutable pointer to the payload.
     #[inline]
     pub fn payload_mut(&mut self) -> &mut [u8] {
-        let length = self.len();
+        let length = self.length();
         let data = self.buffer.as_mut();
         &mut data[field::payload(length)]
     }

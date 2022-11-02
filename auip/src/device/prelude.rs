@@ -37,5 +37,5 @@ pub trait ArpStorage {
 /// Buffer to store ip fragment.
 pub trait IpFragmentBuffer {
     /// Get ip fragment buffer, buffer length is 64k
-    fn get_buffer(&mut self, ident: u16) -> Option<&mut [u8]>;
+    fn get_buffer(&mut self, ident: u16) -> &mut [u8];
 }

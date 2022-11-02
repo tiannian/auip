@@ -6,7 +6,8 @@ use crate::{
 
 use super::action::Action;
 
-pub fn build_and_record_arp(
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn build_and_record_arp(
     sa: layer2::Address,
     sha: layer3::arp::HardwareAddress,
     spa: layer3::arp::ProtocolAddress,

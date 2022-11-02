@@ -2,7 +2,7 @@ use auip_pkt::{layer3, layer4};
 
 use crate::{poll_udp, IpFragmentBuffer, Result};
 
-pub fn poll_ipv4(
+pub(crate) fn poll_ipv4(
     pkt: layer3::ipv4::Packet<&[u8]>,
     ip_fragment_buffer: &mut impl IpFragmentBuffer,
 ) -> Result<()> {
@@ -27,24 +27,15 @@ pub fn poll_ipv4(
             let payload_len = payload.len();
             let offset = pkt.frag_offset() as usize;
 
-            if let Some(buffer) = ip_fragment_buffer.get_buffer(ident) {
-                let target_buf = &mut buffer[offset..payload_len];
-
-                target_buf.copy_from_slice(payload);
-            } else {
-                log::warn!("No buffer to store ip fragment");
-            }
+            let buffer = ip_fragment_buffer.get_buffer(ident);
+            let target_buf = &mut buffer[offset..payload_len];
+            target_buf.copy_from_slice(payload);
 
             return Ok(());
         } else {
             let length = pkt.total_len();
-
-            if let Some(buffer) = ip_fragment_buffer.get_buffer(ident) {
-                &buffer[0..length as usize]
-            } else {
-                log::warn!("No buffer to store ip fragment");
-                return Ok(());
-            }
+            let buffer = ip_fragment_buffer.get_buffer(ident);
+            &buffer[0..length as usize]
         }
     };
 
@@ -56,6 +47,7 @@ pub fn poll_ipv4(
 
             poll_udp(pkt)?;
         }
+        layer3::Protocol::Icmp => {}
         _ => {}
     }
 

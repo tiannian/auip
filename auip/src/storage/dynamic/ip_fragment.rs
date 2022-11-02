@@ -1,36 +1,44 @@
-use alloc::vec::Vec;
+use alloc::{collections::BTreeMap, vec::Vec};
 
 use crate::{consts::MAX_IP_FRAGMENT_PACKET_LENGTH, IpFragmentBuffer};
 
 pub struct IpFragment {
-    pub max_length: usize,
-    pub buffers: Vec<u8>,
-    // pub mapping:
+    max_length: usize,
+    buffers: Vec<u8>,
+    mapping: BTreeMap<u16, usize>,
+    curser: usize,
 }
 
 impl IpFragment {
     pub fn new(max_length: usize) -> Self {
         Self {
             max_length,
-            // TODO: Opt
             buffers: Vec::new(),
+            mapping: BTreeMap::new(),
+            curser: 0,
         }
     }
 }
 
 impl IpFragmentBuffer for IpFragment {
-    fn get_buffer(&mut self, idx: u16) -> Option<&mut [u8]> {
-        if idx < self.max_length {
-            let end = (idx + 1) * MAX_IP_FRAGMENT_PACKET_LENGTH;
-            let begin = idx * MAX_IP_FRAGMENT_PACKET_LENGTH;
-
-            if end > self.buffers.len() {
-                self.buffers.resize(end, 0);
-            }
-
-            Some(&mut self.buffers[begin..end])
+    fn get_buffer(&mut self, ident: u16) -> &mut [u8] {
+        let curser = if self.max_length == 1 {
+            0
+        } else if let Some(curser) = self.mapping.get(&ident) {
+            *curser
         } else {
-            None
-        }
+            self.curser += 1;
+            if self.curser == self.max_length {
+                self.curser = 0;
+            }
+            log::info!("Current curser is {}, map to {}", self.curser, ident);
+            self.mapping.insert(ident, self.curser);
+            self.curser
+        };
+
+        let begin = curser * MAX_IP_FRAGMENT_PACKET_LENGTH;
+        let end = (curser + 1) * MAX_IP_FRAGMENT_PACKET_LENGTH;
+
+        &mut self.buffers[begin..end]
     }
 }
