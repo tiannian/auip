@@ -39,6 +39,8 @@ impl IpFragmentBuffer for IpFragment {
         let begin = curser * MAX_IP_FRAGMENT_PACKET_LENGTH;
         let end = (curser + 1) * MAX_IP_FRAGMENT_PACKET_LENGTH;
 
+        self.buffers.resize(end, 0);
+
         &mut self.buffers[begin..end]
     }
 }

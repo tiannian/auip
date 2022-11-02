@@ -33,7 +33,7 @@ pub(crate) fn poll_ipv4(
 
             return Ok(());
         } else {
-            let length = pkt.total_len();
+            let length = pkt.total_len() - pkt.header_len() as u16 + pkt.frag_offset();
             let buffer = ip_fragment_buffer.get_buffer(ident);
             &buffer[0..length as usize]
         }
