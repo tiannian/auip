@@ -1,3 +1,5 @@
+use core::fmt::{self, Display, Formatter};
+
 use byteorder::{ByteOrder, NetworkEndian};
 
 use crate::{utils::checksum, Error, IntoInner, Result};
@@ -9,7 +11,7 @@ pub struct Packet<T> {
     buffer: T,
 }
 
-mod field {
+pub mod field {
     use crate::utils::field::Field;
 
     pub const TYPE: usize = 0;
@@ -29,6 +31,13 @@ impl<T> IntoInner for Packet<T> {
 
     fn into_inner(self) -> Self::Inner {
         self.buffer
+    }
+}
+
+impl<T: AsRef<[u8]>> Display for Packet<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str("UDP Packet:")?;
+        f.write_fmt(format_args!("Protocol {:?}", self.protocol()))
     }
 }
 

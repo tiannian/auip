@@ -38,7 +38,7 @@ impl<T: AsRef<[u8]>> Display for Packet<T> {
     }
 }
 
-pub(crate) mod field {
+pub mod field {
     use crate::utils::field::Field;
 
     pub const VER_IHL: usize = 0;
@@ -51,6 +51,8 @@ pub(crate) mod field {
     pub const CHECKSUM: Field = 10..12;
     pub const SRC_ADDR: Field = 12..16;
     pub const DST_ADDR: Field = 16..20;
+
+    pub const HEADER_LEN_WITHOUT_OPTION: u8 = 20;
 }
 
 impl<T> IntoInner for Packet<T> {
