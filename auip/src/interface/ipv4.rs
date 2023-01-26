@@ -1,17 +1,15 @@
-use auip_pkt::{layer3, layer4};
+use auip_pkt::layer3::{
+    ipv4::{field, Packet},
+    Protocol,
+};
 
-use crate::{poll_udp, IpFragmentBuffer, Result};
+use crate::{build_time_exceeded_ttl, poll_icmpv4, poll_udp, IpFragmentBuffer, Result, bytes::Icmpv4Bytes};
 
 pub(crate) fn poll_ipv4(
-    pkt: layer3::ipv4::Packet<&[u8]>,
+    pkt: Packet<&[u8]>,
     ip_fragment_buffer: &mut impl IpFragmentBuffer,
 ) -> Result<()> {
     log::debug!("Receive packet: {}", pkt);
-
-    // Drop ttl is 0.
-    if pkt.ttl() == 0 {
-        return Ok(());
-    }
 
     // Check is fragment
     let payload = if pkt.dont_frag() {
@@ -42,14 +40,46 @@ pub(crate) fn poll_ipv4(
     let protocol = pkt.protocol();
 
     match protocol {
-        layer3::Protocol::Udp => {
-            let pkt = layer4::udp::Packet::new_checked(payload)?;
-
-            poll_udp(pkt)?;
+        Protocol::Udp => {
+            poll_udp(payload)?;
         }
-        layer3::Protocol::Icmp => {}
+        Protocol::Icmp => {
+            poll_icmpv4(payload)?;
+        }
         _ => {}
     }
 
     Ok(())
 }
+
+pub(crate) fn build_response_packet<SendInner>(
+    recv: &Packet<&[u8]>,
+    send: &mut Packet<SendInner>,
+    protocol: Protocol,
+) where
+    SendInner: AsRef<[u8]> + AsMut<[u8]>,
+{
+    send.set_version(recv.version());
+    send.set_header_len(field::HEADER_LEN_WITHOUT_OPTION);
+    send.set_ident(recv.ident());
+    send.set_dont_frag(true);
+    send.set_ttl(64);
+    send.set_protocol(protocol);
+    send.set_src_addr(recv.dst_addr());
+    send.set_dst_addr(recv.src_addr());
+}
+
+pub(crate) fn build_icmp_time_expire_ttl_packet(recv: &Packet<&[u8]>) {
+    let bytes = Icmpv4Bytes::default();
+
+    let mut send = Packet::new_unchecked(bytes);
+
+    build_response_packet(recv, &mut send, Protocol::Icmp);
+    let payload = send.payload_mut();
+
+    build_time_exceeded_ttl(payload);
+
+    send.fill_checksum();
+}
+
+

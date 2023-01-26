@@ -1,10 +1,6 @@
 use auip_pkt::{layer2, layer3, IntoInner};
 
-use crate::{
-    interface::action::ArpBytes, AddrsStorage, ArpStorage, Error, InterfaceConfig, Result,
-};
-
-use super::action::Action;
+use crate::{bytes::ArpBytes, AddrsStorage, ArpStorage, Error, InterfaceConfig, Result};
 
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn build_and_record_arp(
@@ -16,7 +12,7 @@ pub(crate) fn build_and_record_arp(
     config: &InterfaceConfig,
     addrs_storage: &impl AddrsStorage,
     arp_storage: &mut impl ArpStorage,
-) -> Result<Action> {
+) -> Result<Option<ArpBytes>> {
     let mac_addr = sha.mac_addr().ok_or(Error::UnexpectedType)?;
     let ip_addr = spa.ipv4_addr().ok_or(Error::UnexpectedType)?;
 
@@ -60,9 +56,9 @@ pub(crate) fn build_and_record_arp(
 
         log::debug!("Send packet: {}", layer2_pkt);
 
-        Ok(Action::SendArp(layer2_pkt.into_inner()))
+        Ok(Some(layer2_pkt.into_inner()))
     } else {
         log::debug!("Ip address mismatch, Drop it.");
-        Ok(Action::NoAction)
+        Ok(None)
     }
 }

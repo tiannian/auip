@@ -8,8 +8,6 @@ use crate::{
     IpFragmentBuffer, Medium, Result,
 };
 
-use super::action::Action;
-
 /// Network interface
 pub struct Interface<D, AS, ARPS, IFB> {
     device: D,
@@ -77,7 +75,7 @@ where
         &mut self.config
     }
 
-    pub(crate) fn poll_ethernet(&mut self) -> Result<Action> {
+    pub(crate) fn poll_ethernet(&mut self) -> Result<()> {
         let device = &mut self.device;
 
         let this_mac_addr = *self.addrs_storage.mac_addr();
@@ -90,7 +88,9 @@ where
 
         let ip_fragment_buffer = &mut self.ip_fragment_buffer;
 
-        if let Some(rx_bytes) = device.recv()? {
+        let rx_bytes = device.recv()?;
+
+        if let Some(rx_bytes) = rx_bytes {
             let rx_pkt = ethernet::Packet::new_checked(rx_bytes)?;
 
             log::debug!("Receive ethernet packet: {}", rx_pkt);
@@ -100,7 +100,7 @@ where
             if dest_addr != this_mac_addr && dest_addr != layer2::Address::BROADCAST {
                 log::debug!("Mac address {} mismatch, Drop it.", dest_addr);
 
-                return Ok(Action::NoAction);
+                return Ok(());
             }
 
             let protocol = rx_pkt.protocol();
@@ -112,7 +112,7 @@ where
                         l3
                     } else {
                         log::debug!("VlanId mismatch, Drop it.");
-                        return Ok(Action::NoAction);
+                        return Ok(());
                     }
                 }
                 layer2::Protocol::QinQ(vlanid, vlanid1, l3) => {
@@ -122,20 +122,20 @@ where
                         l3
                     } else {
                         log::debug!("VlanId mismatch, Drop it.");
-                        return Ok(Action::NoAction);
+                        return Ok(());
                     }
                 }
 
                 // TODO: process IEEE802.3 packet.
                 layer2::Protocol::Length(_) => {
                     log::debug!("Unsupport IEEE802.3. This format will support later, Drop it.");
-                    return Ok(Action::NoAction);
+                    return Ok(());
                 }
 
                 // Skip
                 layer2::Protocol::Unknown(ty) => {
                     log::debug!("Unsupport protocol type: {}, Drop it.", ty);
-                    return Ok(Action::NoAction);
+                    return Ok(());
                 }
             };
 
@@ -150,7 +150,7 @@ where
                     let tpa = pkt.target_protocol_address()?;
                     let sa = rx_pkt.src_addr();
 
-                    return build_and_record_arp(
+                    if let Some(arp) = build_and_record_arp(
                         sa,
                         sha,
                         spa,
@@ -159,7 +159,9 @@ where
                         config,
                         addrs_storage,
                         arp_storage,
-                    );
+                    )? {
+                        device.send(&arp)?;
+                    }
                 }
                 layer2::Layer3Protocol::IPv4 => {
                     let pkt = layer3::ipv4::Packet::new_checked(rx_pkt.payload())?;
@@ -171,17 +173,20 @@ where
             }
         }
 
-        Ok(Action::NoAction)
+        Ok(())
     }
 
     pub(crate) fn poll_ip(&mut self) -> Result<()> {
         let ip_fragment_buffer = &mut self.ip_fragment_buffer;
+        let device = &mut self.device;
 
-        if let Some(rx_bytes) = self.device.recv()? {
+        if let Some(rx_bytes) = device.recv()? {
             let ip_pkt = layer3::IpPacket::parse(rx_bytes)?;
 
             match ip_pkt {
-                layer3::IpPacket::IPv4(pkt) => poll_ipv4(pkt, ip_fragment_buffer)?,
+                layer3::IpPacket::IPv4(pkt) => {
+                    poll_ipv4(pkt, ip_fragment_buffer)?;
+                }
                 layer3::IpPacket::Ipv6 => {}
             }
         }
@@ -191,10 +196,7 @@ where
 
     pub fn poll(&mut self) -> Result<()> {
         match self.medium {
-            Medium::Ethernet => match self.poll_ethernet()? {
-                Action::NoAction => {}
-                Action::SendArp(bytes) => self.device.send(&bytes)?,
-            },
+            Medium::Ethernet => self.poll_ethernet()?,
             Medium::Ip => self.poll_ip()?,
         }
 

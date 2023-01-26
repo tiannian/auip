@@ -1,20 +1,24 @@
+use core::fmt::{self, Display, Formatter};
+
 use byteorder::{ByteOrder, NetworkEndian};
 
 use crate::{utils::checksum, Error, IntoInner, Result};
+
+use super::Message;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Packet<T> {
     buffer: T,
 }
 
-mod field {
+pub mod field {
     use crate::utils::field::Field;
 
     pub const TYPE: usize = 0;
     pub const CODE: usize = 1;
     pub const CHECKSUM: Field = 2..4;
 
-    pub const UNUSED: Field = 4..8;
+    // pub const UNUSED: Field = 4..8;
 
     pub const ECHO_IDENT: Field = 4..6;
     pub const ECHO_SEQNO: Field = 6..8;
@@ -27,6 +31,13 @@ impl<T> IntoInner for Packet<T> {
 
     fn into_inner(self) -> Self::Inner {
         self.buffer
+    }
+}
+
+impl<T: AsRef<[u8]>> Display for Packet<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str("UDP Packet:")?;
+        f.write_fmt(format_args!("Protocol {:?}", self.protocol()))
     }
 }
 
@@ -61,16 +72,38 @@ impl<T: AsRef<[u8]>> Packet<T> {
         }
     }
 
+    /// get Protocol
+    pub fn protocol(&self) -> Message {
+        let ty = self.msg_type();
+        let code = self.msg_code();
+
+        let mut msg = Message::from_type_code(ty, code);
+
+        match &mut msg {
+            Message::EchoRequest(e) => {
+                e.ident = self.echo_ident();
+                e.seq_no = self.echo_seq_no();
+            }
+            Message::EchoReply(e) => {
+                e.ident = self.echo_ident();
+                e.seq_no = self.echo_seq_no();
+            }
+            _ => {}
+        }
+
+        msg
+    }
+
     /// Return the message type field.
     #[inline]
-    pub fn msg_type(&self) -> Message {
+    fn msg_type(&self) -> u8 {
         let data = self.buffer.as_ref();
-        Message::from(data[field::TYPE])
+        data[field::TYPE]
     }
 
     /// Return the message code field.
     #[inline]
-    pub fn msg_code(&self) -> u8 {
+    fn msg_code(&self) -> u8 {
         let data = self.buffer.as_ref();
         data[field::CODE]
     }
@@ -87,7 +120,7 @@ impl<T: AsRef<[u8]>> Packet<T> {
     /// # Panics
     /// This function may panic if this packet is not an echo request or reply packet.
     #[inline]
-    pub fn echo_ident(&self) -> u16 {
+    fn echo_ident(&self) -> u16 {
         let data = self.buffer.as_ref();
         NetworkEndian::read_u16(&data[field::ECHO_IDENT])
     }
@@ -97,7 +130,7 @@ impl<T: AsRef<[u8]>> Packet<T> {
     /// # Panics
     /// This function may panic if this packet is not an echo request or reply packet.
     #[inline]
-    pub fn echo_seq_no(&self) -> u16 {
+    fn echo_seq_no(&self) -> u16 {
         let data = self.buffer.as_ref();
         NetworkEndian::read_u16(&data[field::ECHO_SEQNO])
     }
@@ -105,12 +138,7 @@ impl<T: AsRef<[u8]>> Packet<T> {
     /// Return the header length.
     /// The result depends on the value of the message type field.
     pub fn header_len(&self) -> usize {
-        match self.msg_type() {
-            Message::EchoRequest => field::ECHO_SEQNO.end,
-            Message::EchoReply => field::ECHO_SEQNO.end,
-            Message::DstUnreachable => field::UNUSED.end,
-            _ => field::UNUSED.end, // make a conservative assumption
-        }
+        field::HEADER_END
     }
 
     /// Validate the header checksum.
@@ -124,5 +152,89 @@ impl<T: AsRef<[u8]>> Packet<T> {
 
         let data = self.buffer.as_ref();
         checksum::data(data) == !0
+    }
+
+    pub fn payload(&self) -> &[u8] {
+        let data = self.buffer.as_ref();
+        &data[self.header_len()..]
+    }
+}
+
+impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
+    /// Set protocol
+    pub fn set_protocol(&mut self, protocol: Message) {
+        let (ty, code) = protocol.to_type_code();
+
+        self.set_msg_type(ty);
+        self.set_msg_code(code);
+
+        match protocol {
+            Message::EchoRequest(v) => {
+                self.set_echo_ident(v.ident);
+                self.set_echo_seq_no(v.seq_no);
+            }
+            Message::EchoReply(v) => {
+                self.set_echo_ident(v.ident);
+                self.set_echo_seq_no(v.seq_no);
+            }
+            _ => {}
+        }
+    }
+
+    /// Set the message type field.
+    #[inline]
+    fn set_msg_type(&mut self, value: u8) {
+        let data = self.buffer.as_mut();
+        data[field::TYPE] = value
+    }
+
+    /// Set the message code field.
+    #[inline]
+    fn set_msg_code(&mut self, value: u8) {
+        let data = self.buffer.as_mut();
+        data[field::CODE] = value
+    }
+
+    /// Set the checksum field.
+    #[inline]
+    pub fn set_checksum(&mut self, value: u16) {
+        let data = self.buffer.as_mut();
+        NetworkEndian::write_u16(&mut data[field::CHECKSUM], value)
+    }
+
+    /// Set the identifier field (for echo request and reply packets).
+    ///
+    /// # Panics
+    /// This function may panic if this packet is not an echo request or reply packet.
+    #[inline]
+    fn set_echo_ident(&mut self, value: u16) {
+        let data = self.buffer.as_mut();
+        NetworkEndian::write_u16(&mut data[field::ECHO_IDENT], value)
+    }
+
+    /// Set the sequence number field (for echo request and reply packets).
+    ///
+    /// # Panics
+    /// This function may panic if this packet is not an echo request or reply packet.
+    #[inline]
+    fn set_echo_seq_no(&mut self, value: u16) {
+        let data = self.buffer.as_mut();
+        NetworkEndian::write_u16(&mut data[field::ECHO_SEQNO], value)
+    }
+
+    /// Compute and fill in the header checksum.
+    pub fn fill_checksum(&mut self) {
+        self.set_checksum(0);
+        let checksum = {
+            let data = self.buffer.as_ref();
+            !checksum::data(data)
+        };
+        self.set_checksum(checksum)
+    }
+
+    pub fn payload_mut(&mut self) -> &mut [u8] {
+        let range = self.header_len()..;
+        let data = self.buffer.as_mut();
+        &mut data[range]
     }
 }

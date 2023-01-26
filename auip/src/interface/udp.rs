@@ -1,8 +1,10 @@
-use auip_pkt::layer4;
+use auip_pkt::layer4::udp::Packet;
 
 use crate::Result;
 
-pub fn poll_udp(pkt: layer4::udp::Packet<&[u8]>) -> Result<()> {
+pub(crate) fn poll_udp(bytes: &[u8]) -> Result<()> {
+    let pkt = Packet::new_checked(bytes)?;
+
     log::debug!("Receive packet: {}", pkt);
     Ok(())
 }
