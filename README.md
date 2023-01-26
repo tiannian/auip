@@ -36,18 +36,12 @@ Network support these packet and function:
 
 ## Architecture
 
-- [X] Device
-- [X] Interface
-- [X] Storage
-- [ ] Hook
-- [ ] Socket
-
 ### Device
 
 Device is work on mac layer. It only have two function:
 
-- Recv MAC frame, then input to auip. Use poll mode.
-- Send MAC frame from auip.
+- Recv frame, then input to auip. Use poll mode.
+- Send frame from auip.
 
 Device is only a trait, you must bind a device to a interface.
 
@@ -65,8 +59,6 @@ Currently support these device:
 
 - [X] Tap (Linux, MacOS)
 - [X] Tun (Linux, MacOS)
-- [ ] RawSocket (Windows)
-- [ ] Bridge
 - [ ] Loopback
 - [ ] Sub-port (For macvtap, vlan)
 
